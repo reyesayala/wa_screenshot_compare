@@ -61,10 +61,84 @@ Command syntax:
 python3 current_screenshots.py --csv=current_urls.csv --db=urls.db --picsout=current_pics/ --indexcsv=current_index.csv --method=0 --timeout=30
 ```
 Arguments:
-* csv - Input CSV file with current URLs.
+* csv - Input CSV file with current URLs. Interchangeable with --db as only one type of input is allowed.
 * db - Input DB file with URLs.
 * picsout - Directory to output the screenshots.
 * indexcsv - The CSV file to write the index.
 * method - Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
 * timeout - (optional) Specify duration before timeout for each site, in seconds, default 30 seconds.
 
+### archive_screenshot.py
+This program takes the CSV or DB with the archive website URLS and takes screenshots.
+> the output CSV will have five columns, archive ID, URL ID, capture date, success code, and URL
+> As of right now, method=1 takes the most consistent screenshots.
+
+Command syntax:
+```
+python3 archive_screenshot.py --csv=archive_csv.csv --db=urls.db --picsout=archive_pics/ --indexcsv=archive_index.csv --method= 0 --timeout=30 --lazy=1
+```
+Arguments:
+* csv - Input CSV file with archive URLs. Interchangeable with --db as only one type of input is allowed.
+* db - Input DB file with URLs.
+* picsout - Directory to output the screenshots.
+* indexcsv - The CSV file to write the index.
+* method - Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
+* timeout - (optional) Specify duration before timeout for each site, in seconds, default 30 seconds.
+* lazy - (optional) Makes the program continue to the next archive after taking n pictures.
+
+### get_file_names.py
+This program outputs a CSV file which maps the current and archive URLs with their respective screenshots.
+> The output CSV will have four columns, current URl, archive URL, current screenshot file name, archive screenshot file name.
+
+Command syntax:
+```
+python3 get_file_names.py --currcsv=current_index/ --archcsv=archive_index/ --db=urls.db --out=file_names.csv --print
+```
+Arguments:
+* currcsv - The CSV file with the current screenshots index.
+* archcsv - The CSV file with the archive screenshots index.
+* db - Input DB file with urls. Interchangeable with using --currcsv and --archcsv since only one type of input is allowed. 
+* out - The CSV file to write the urls and file names. 
+* print - (optional) Include to print urls and file names to stdout, default doesn't print.
+
+### randomly_select_screenshots.py
+This program outputs a CSV file where each current screenshot is mapped to only one archive screenshot.
+> The output CSV will essentially be the same as the output of get_file_names.py
+
+command syntax:
+```
+python3 randomly_select_screenshots.py --csv=file_names.csv --out=selected_file_names.csv
+```
+Arguments:
+* csv - The CSV file with screenshot file names.
+* out - The CSV file to write the newly selected file names.
+
+### calculate_similarity.py
+This program gets all the screenshots and calls functions in similarity_measures.py to calculate the image similarity socres.
+> The output CSV will have five to seven columns, current URl, archive URL, current screenshot file name, archive screenshot file name, structural similarty score, mean squared error, vector comparison score.
+
+command syntax:
+```
+python3 calculate_similarity.py --csv=file_names.csv --currdir=current_pics/ --archdir=archive_pics/ --out=score.csv --ssim --mse --vec --print
+```
+Arguments:
+* csv - The CSV file with screenshot file names.
+* currdir - Directory with screenshots of the current websites.
+* archdir - Directory with screenshots of the archive websites.
+* out - The CSV file to write the results of the comparisons.
+* ssim - (optional) Include to calculate structural similarity.
+* mse - (optional) Include to calculate mean square error.
+* vec - (optional) Include to calculate vector comparison score.
+* print - (optional) Include to print results to stdout.
+
+### similarity_measures.py
+Contains functions used by calculate_similarity.py which will be used to calculate the scores.
+
+## Authors
+todo
+
+## License
+todo
+
+## Acknowledgments 
+todo
