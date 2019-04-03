@@ -27,7 +27,7 @@ but with very different mean structural similarity indices.
 
 import numpy as np
 
-from skimage import data, img_as_float
+from skimage import img_as_float
 from skimage.measure import compare_ssim as ssim
 from skimage import io
 
@@ -51,7 +51,8 @@ def calculate_ssim(current_image_name, archive_image_name):
 
     References
     ----------
-    .. [1] http://scikit-image.org/docs/stable/auto_examples/transform/plot_ssim.html#sphx-glr-auto-examples-transform-plot-ssim-py
+    .. [1] http://scikit-image.org/docs/stable/auto_examples/transform/plot_ssim.html#
+            sphx-glr-auto-examples-transform-plot-ssim-py
 
     """
 
@@ -84,24 +85,19 @@ def calculate_mse(current_image_name, archive_image_name):
 
     References
     ----------
-    .. [1] Zhou Wang; Bovik, A.C.; ,"Mean squared error: Love it or leave it? A new
-       look at Signal Fidelity Measures," Signal Processing Magazine, IEEE,
-       vol. 26, no. 1, pp. 98-117, Jan. 2009.
-
-    .. [2] Z. Wang, A. C. Bovik, H. R. Sheikh and E. P. Simoncelli, "Image quality
-       assessment: From error visibility to structural similarity," IEEE
-       Transactions on Image Processing, vol. 13, no. 4, pp. 600-612,
-       Apr. 2004.
+    .. [1]  https://www.pyimagesearch.com/2014/09/15/python-compare-two-images/
 
     """
 
     current_image = io.imread(current_image_name)
-    current_image_float = img_as_float(current_image)
-
     archive_image = io.imread(archive_image_name)
-    archive_image_float = img_as_float(archive_image)
 
-    mse_noise = np.linalg.norm(current_image_float - archive_image_float)
+    # current_image_float = img_as_float(current_image)
+    # archive_image_float = img_as_float(archive_image)
+    # mse_noise = np.linalg.norm(current_image_float - archive_image_float)
+
+    mse_noise = np.sum((current_image.astype("float") - archive_image.astype("float")) ** 2)
+    mse_noise /= float(current_image.shape[0] * current_image.shape[1])
 
     return mse_noise
 
@@ -141,66 +137,6 @@ def calculate_vec(current_image_name, archive_image_name):
 
     ncomponents = current_image.size[0] * current_image.size[1] * 3
 
-    vec_score = (dif / 255.0 * 100) / ncomponents
+    vec_score = 100 - ((dif / 255.0 * 100) / ncomponents)    # convert to percentage match
 
     return vec_score
-
-
-'''
-archived_screenshot_filename = sys.argv[2]
-
-filename = os.path.join('/home/brenda/UofAlberta/Research/collection3490/screenshotCompare/picsNormal', '3490.105.png')
-
-screenshot = io.imread(filename)
-
-filename_archived = os.path.join('/home/brenda/UofAlberta/Research/collection3490/screenshotCompare/picsArchived', '3490.105.20130210073329.png')
-screenshot_archived = io.imread(filename_archived)
-
-#img = img_as_float(data.camera())
-#img = img_as_float(io.imread(filename)).astype(np.float32)
-
-img = img_as_float(screenshot)
-img_archived = img_as_float(screenshot_archived)
-rows, cols, num_channels = img.shape
-a_rows, a_cols, a_num_channels = img_archived.shape
-
-
-noise = np.ones_like(img) * 0.2 * (img.max() - img.min())
-noise[np.random.random(size=noise.shape) > 0.5] *= -1
-
-#warnings.simplefilter('error')
-'''
-
-
-'''
-img_noise = img + noise
-img_const = img + abs(noise)
-
-fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 4),
-                         sharex=True, sharey=True)
-ax = axes.ravel()
-
-mse_none = mse(img, img)
-ssim_none = ssim(img, img, multichannel=True, data_range=img.max() - img.min())
-
-#mse_noise = mse(img, img_noise)
-mse_noise = mse(img, img_archived)
-ssim_noise = ssim(img, img_archived,multichannel=True,
-                  data_range=img_archived.max() - img_archived.min())
-
-
-label = 'MSE: {:.2f}, SSIM: {:.2f}'
-
-ax[0].imshow(img, cmap=plt.cm.gray, vmin=0, vmax=1)
-ax[0].set_xlabel(label.format(mse_none, ssim_none))
-ax[0].set_title('Current, live website')
-
-ax[1].imshow(img_archived, cmap=plt.cm.gray, vmin=0, vmax=1)
-ax[1].set_xlabel(label.format(mse_noise, ssim_noise))
-ax[1].set_title('Archived version of website')
-
-
-plt.tight_layout()
-plt.show()
-
-'''

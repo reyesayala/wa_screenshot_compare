@@ -1,23 +1,19 @@
-# this program gets the list of current URLs and then creates a list of corresponding archived screenshots
-
 import argparse
 import csv
 
 import similarity_measures
 
 
-# create dict with the current image as key and a list of archive images as value
-# from the input csv file
-def read_input_file(input_csv, current_images_dir, archive_images_dir):
+def read_input_file(csv_in_name, curr_img_dir, arch_img_dir):
     """Opens up the given CSV file and parses the file names and urls.
 
     Parameters
     ----------
-    input_csv : string
-        The input CSV file name that contains the urls and file names.
-    current_images_dir : string
+    csv_in_name : str
+        The input CSV file name.
+    curr_img_dir : str
         The directory that contains the current website images.
-    archive_images_dir : string
+    arch_img_dir : str
         The directory that contains the archive website images.
 
     Returns
@@ -36,11 +32,11 @@ def read_input_file(input_csv, current_images_dir, archive_images_dir):
 
     """
 
-    print("File name: ", input_csv)
+    print("File name: ", csv_in_name)
     image_name_dict = {}
     url_name_dict = {}
 
-    with open(input_csv, mode='r') as csv_file:
+    with open(csv_in_name, mode='r') as csv_file:
         csv_reader = csv.reader(csv_file)
         line_count = 0
         compare_name = ''
@@ -49,8 +45,8 @@ def read_input_file(input_csv, current_images_dir, archive_images_dir):
             line_count += 1
             if line_count == 1:     # skip the first row in csv because it's the header
                 continue
-            current_image_path = "{0}/{1}".format(current_images_dir, row[2])
-            archive_image_path = "{0}/{1}".format(archive_images_dir, row[3])
+            current_image_path = "{0}/{1}".format(curr_img_dir, row[2])
+            archive_image_path = "{0}/{1}".format(arch_img_dir, row[3])
             current_url = row[0]
             archive_url = row[1]
             url_name_dict[current_image_path] = current_url
@@ -67,12 +63,11 @@ def read_input_file(input_csv, current_images_dir, archive_images_dir):
     return image_name_dict, url_name_dict
 
 
-def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, out_file_name, do_print):
+def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, csv_out_name, do_print):
     """Calculates the image similarity scores of the given images
 
     Parameters
     ----------
-
     image_dict : dict
         A dictionary where the current screenshot file name references a list of the archive screenshot file names.
         ie: {"current.image.png" : ["archive.image.1.png", "archive.image.2.png"]}
@@ -85,15 +80,15 @@ def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, out_fi
         If True then the mean squared error will be calculated.
     vec_flag :bool
         If True then the vector comparison score will be calculated.
-    out_file_name : string
-        The output CSV file name to write the results to.
+    csv_out_name : str
+        The output CSV file name.
     do_print : bool
         If True then the urls and file names and scores will be printed to stdout.
 
     """
 
-    with open(out_file_name, 'w+') as out_file:
-        csv_writer = csv.writer(out_file, delimiter=',', quoting=csv.QUOTE_ALL)
+    with open(csv_out_name, 'w+') as csv_file_out:
+        csv_writer = csv.writer(csv_file_out, delimiter=',', quoting=csv.QUOTE_ALL)
 
         header = ["current_url", "archive_url", "current_file_name", "archive_file_name"]
         if ssim_flag:
@@ -111,43 +106,60 @@ def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, out_fi
 
                 if ssim_flag:
                     ssim_score = similarity_measures.calculate_ssim(current_image_name, archive_image_name)
-                    output.append(str(ssim_score))
+                    output.append("%.2f" % ssim_score)   # truncate to 2 decimal places
                 if mse_flag:
                     mse_score = similarity_measures.calculate_mse(current_image_name, archive_image_name)
-                    output.append(str(mse_score))
+                    output.append("%.2f" % mse_score)
                 if vec_flag:
                     vec_score = similarity_measures.calculate_vec(current_image_name, archive_image_name)
-                    output.append(str(vec_score))
+                    output.append("%.2f" % vec_score)
 
                 csv_writer.writerow(output)
 
                 if do_print:
-                    # print("{0}, {1}, {2}, {3}".format(output[2], ssim_score, mse_score, vec_score))
-
-                    # print("{0}, {1}, {2}, {3} ".format(output[0], output[0], output[0], output[0]), end='')
-                    # if ssim_flag:
-                    #     print("{}, ".format(ssim_score))
-                    # if mse_flag:
-                    #     print("{}, ".format(mse_score))
-                    # if vec_flag:
-                    #     print("{}, ".format(vec_score))
-                    # todo
-                    pass
+                    print("{0}, {1}".format(output[2], output[3]), end='')
+                    if ssim_flag:
+                        print(", %.2f" % ssim_score, end='')
+                    if mse_flag:
+                        print(", %.2f" % mse_score, end='')
+                    if vec_flag:
+                        print(", %.2f" % vec_score, end='')
+                    print('\n', end='')
 
 
-# for handling the command line switches
 def parse_args():
-    """Parses the arguments passed in from the command line"""
+    """Parses the command line arguments.
+
+    Returns
+    -------
+    args.csv : str
+        The CSV file with screenshot file names.
+    args.currdir : str
+        Directory with screenshots of the current websites.
+    args.archdir : str
+        Directory with screenshots of the archive websites.
+    args.out : str
+        The CSV file to write the results of the comparisons.
+    args.ssim : bool
+        Whether or not to compute the structural similarity score.
+    args.mse : bool
+        Whether or not to compute the mean squared error.
+    args.vec : bool
+        Whether or not to compute the vector comparison score.
+    args.print : bool
+        Whether or not to print the result to stdout.
+
+    """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--csv", type=str, help="CSV file with screenshot file names")
-    parser.add_argument("--currdir", type=str, help="directory with screenshots of the current websites")
-    parser.add_argument("--archdir", type=str, help="directory with screenshots of the archive websites")
-    parser.add_argument('--ssim', action='store_true', help="include to calculate structural similarity")
-    parser.add_argument('--mse', action='store_true', help="include to calculate mean square error")
-    parser.add_argument('--vec', action='store_true', help="include to calculate vector comparison score")
-    parser.add_argument("--out", type=str, help="output csv file to write the results of the comparisons")
-    parser.add_argument('--print', action='store_true', help="include to print results of stdout")
+    parser.add_argument("--csv", type=str, help="The CSV file with screenshot file names")
+    parser.add_argument("--currdir", type=str, help="Directory with screenshots of the current websites")
+    parser.add_argument("--archdir", type=str, help="Directory with screenshots of the archive websites")
+    parser.add_argument("--out", type=str, help="The CSV file to write the results of the comparisons")
+    parser.add_argument('--ssim', action='store_true', help="(optional) Include to calculate structural similarity")
+    parser.add_argument('--mse', action='store_true', help="(optional) Include to calculate mean square error")
+    parser.add_argument('--vec', action='store_true', help="(optional) Include to calculate vector comparison score")
+    parser.add_argument('--print', action='store_true', help="(optional) Include to print results to stdout")
 
     args = parser.parse_args()
 
@@ -169,12 +181,12 @@ def parse_args():
 
 
 def main():
-    input_csv, current_images_dir, archive_images_dir, ssim_flag, mse_flag, vec_flag, out_file, do_print = parse_args()
+    csv_in_name, curr_img_dir, arch_img_dir, ssim_flag, mse_flag, vec_flag, csv_out_name, do_print = parse_args()
 
     print("Reading the input files ...")
-    image_dict, url_name_dict = read_input_file(input_csv, current_images_dir, archive_images_dir)
+    image_dict, url_name_dict = read_input_file(csv_in_name, curr_img_dir, arch_img_dir)
 
-    find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, out_file, do_print)
+    find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, csv_out_name, do_print)
 
 
 main()
