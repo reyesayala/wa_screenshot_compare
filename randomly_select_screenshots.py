@@ -61,9 +61,6 @@ def parse_args():
     args = parser.parse_args()
 
     # some error checking
-    if args.currdir is None or args.archdir is None:
-        print("Must provide directory with current and archive screenshots")
-        exit()
     if args.csv is None:
         print("Must provide input file")
         exit()
