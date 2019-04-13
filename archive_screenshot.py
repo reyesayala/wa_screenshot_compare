@@ -253,8 +253,31 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
     page = await browser.newPage()
     await page.setViewport({'height': 768, 'width': 1024})
     await page.goto(url, timeout=(int(timeout_duration) * 1000))
+
+    await remove_banner(page)        # edit css of page to remove archive-it banner
+
     await page.screenshot(path='{0}{1}.{2}.{3}.png'.format(pics_out_path, archive_id, url_id, date))
     await browser.close()
+
+
+async def remove_banner(page):
+    """Execute js script on page to click button
+
+        Parameters
+        ----------
+        page : pyppeteer.page.Page
+            The page to go through
+
+        References
+        ----------
+        .. [1] https://github.com/ukwa/webrender-puppeteer/blob/6fcc719d64dc19a4929c02d3a445a8283bee5195/renderer.js
+
+        """
+    await page.evaluate('''query => {
+      const elements = [...document.querySelectorAll('wb_div')];
+      const targetElement = elements.find(e => e.style.display.includes(query));
+      targetElement.style.display = "none";
+      }''', "block")
 
 
 def check_site_availability(url):

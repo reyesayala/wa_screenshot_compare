@@ -102,7 +102,6 @@ def calculate_mse(current_image_name, archive_image_name):
     return mse_noise
 
 
-# source: https://rosettacode.org/wiki/Percentage_difference_between_images#Python
 def calculate_vec(current_image_name, archive_image_name):
     """Calculates the vector difference score of the two given images
 
