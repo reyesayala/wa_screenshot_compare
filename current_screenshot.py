@@ -34,7 +34,6 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
         with open(csv_out_name, 'w+') as csv_file_out:
             csv_writer = csv.writer(csv_file_out, delimiter=',', quoting=csv.QUOTE_ALL)
             csv_writer.writerow(["archive_id", "url_id", "succeed_code", "current_url"])
-
             count = 0
             for line in csv_reader:
                 if count == 0:      # skip the header
@@ -248,7 +247,7 @@ async def click_button(page, button_text):
 
     Notes
     -----
-    right now only clicks popups and banners that are buttons, but some sites have banners with using a or wb_divs
+    Right now only clicks popups and banners that are buttons, but some sites have banners with using a or wb_divs
 
 
     """
