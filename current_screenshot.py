@@ -208,26 +208,32 @@ async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_d
 
     browser = await launch(headless=True)
     page = await browser.newPage()
-    await page.setViewport({'height': 768, 'width': 1024})
-    await page.goto(url, timeout=(int(timeout_duration) * 1000))
-    await page.waitFor(1000)
-    await page.reload(timeout=30000)    # reloading a site can actually get rid of certain popups
+    try:
+        await page.setViewport({'height': 768, 'width': 1024})
+        await page.goto(url, timeout=(int(timeout_duration) * 1000))
+        await page.waitFor(1000)
+        await page.reload(timeout=(int(timeout_duration) * 1000))    # reloading a site can get rid of certain popups
 
-    await click_button(page, "I Accept")        # click through popups and banners, there could be a lot more
-    await click_button(page, "I Understand")
-    await click_button(page, "I Agree")
-    await click_button(page, "Accept Recommended Settings")
-    await click_button(page, "Close")
-    await click_button(page, "Close and Accept")
-    await click_button(page, "OK")
-    await click_button(page, "OK, I Understand.")
-    await click_button(page, "Accept")
-    await click_button(page, "Accept Cookies")
-    await click_button(page, "No Thanks")
-    await page.keyboard.press("Escape")
+        await click_button(page, "I Accept")        # click through popups and banners, there could be a lot more
+        await click_button(page, "I Understand")
+        await click_button(page, "I Agree")
+        await click_button(page, "Accept Recommended Settings")
+        await click_button(page, "Close")
+        await click_button(page, "Close and Accept")
+        await click_button(page, "OK")
+        await click_button(page, "OK, I Understand.")
+        await click_button(page, "Accept")
+        await click_button(page, "Accept Cookies")
+        await click_button(page, "No Thanks")
+        await page.keyboard.press("Escape")
 
-    await page.screenshot(path='{0}{1}.{2}.png'.format(pics_out_path, archive_id, url_id))
-    await page.close()
+        await page.screenshot(path='{0}{1}.{2}.png'.format(pics_out_path, archive_id, url_id))
+    except Exception as e:
+        # await page.close()
+        await browser.close()
+        raise e
+
+    # await page.close()
     await browser.close()
 
 

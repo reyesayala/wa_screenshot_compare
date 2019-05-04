@@ -11,7 +11,7 @@ from pyppeteer import errors
 import logging
 
 
-def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, lazy, be_lazy):
+def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, lazy, be_lazy, banner):
     """Fetches urls from the input CSV and takes a screenshot
 
     Parameters
@@ -30,6 +30,8 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
         The max number of archive captures to take a screenshot of before moving on.
     be_lazy : bool
         Whether or not to take a maximum of screenshots per archive capture.
+    banner : bool
+        Whether or not to remove the Archive-It banner
 
     """
 
@@ -67,12 +69,12 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
                 logging.info("url #{0} {1}".format(url_id, url))
 
                 succeed = take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_method,
-                                          timeout_duration)
+                                          timeout_duration, banner)
 
                 csv_writer.writerow([archive_id, url_id, date, succeed, url])
 
 
-def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy):
+def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy, banner):
     """Fetches urls from the input DB and takes a screenshot
 
     Parameters
@@ -91,6 +93,8 @@ def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, time
         The max number of archive captures to take a screenshot of before moving on.
     be_lazy : bool
         Whether or not to take a maximum of screenshots per archive capture.
+    banner : bool
+        Whether or not to remove the Archive-It banner
 
    """
 
@@ -127,7 +131,8 @@ def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, time
         print("\nurl #{0} {1}".format(url_id, url))
         logging.info("url #{0} {1}".format(url_id, url))
 
-        succeed = take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_method, timeout_duration)
+        succeed = take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_method,
+                                  timeout_duration, banner)
 
         cursor.execute("insert into archive_index values ({0}, {1}, '{2}', {3});"
                        .format(archive_id, url_id, date, succeed))
@@ -142,7 +147,7 @@ def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, time
         csv_file_out.close()
 
 
-def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_method, timeout_duration):
+def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_method, timeout_duration, banner):
     """Calls the function or command to take a screenshot
 
     Parameters
@@ -161,6 +166,8 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
         Duration before timeout when going to each website.
     screenshot_method : int
         Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
+    banner : bool
+        Whether or not to remove the Archive-It banner
 
     Returns
     -------
@@ -188,7 +195,7 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
     elif screenshot_method == 1:
         try:
             asyncio.get_event_loop().run_until_complete(
-                puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration))
+                puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration, banner))
             logging.info("Screenshot successful")
             print("Screenshot successful")
             return 200
@@ -225,7 +232,7 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
     return str(succeed)
 
 
-async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration):
+async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration, banner):
     """Take screenshot using the pyppeteer package.
 
     Parameters
@@ -242,6 +249,8 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
         Directory to output the screenshots.
     timeout_duration : str
         Duration before timeout when going to each website.
+    banner : bool
+        Whether or not to remove the Archive-It banner
 
     References
     ----------
@@ -251,12 +260,18 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
 
     browser = await launch()
     page = await browser.newPage()
-    await page.setViewport({'height': 768, 'width': 1024})
-    await page.goto(url, timeout=(int(timeout_duration) * 1000))
+    try:
+        await page.setViewport({'height': 768, 'width': 1024})
+        await page.goto(url, timeout=(int(timeout_duration) * 1000))
+        if not banner:
+            await remove_banner(page)        # edit css of page to remove archive-it banner
+        await page.screenshot(path='{0}{1}.{2}.{3}.png'.format(pics_out_path, archive_id, url_id, date))
+    except Exception as e:
+        # await page.close()
+        await browser.close()
+        raise e
 
-    await remove_banner(page)        # edit css of page to remove archive-it banner
-
-    await page.screenshot(path='{0}{1}.{2}.{3}.png'.format(pics_out_path, archive_id, url_id, date))
+    # await page.close()
     await browser.close()
 
 
@@ -372,6 +387,8 @@ def parse_args():
     parser.add_argument("--timeout", type=str, help="(optional) Specify duration before timeout, "
                                                     "in seconds, default 30 seconds")
     parser.add_argument("--lazy", type=int, help="(optional) Continues to the next archive after taking n pictures")
+    parser.add_argument("--banner", action='store_true',
+                        help="(optional) Include to keep banner, default removes banner")
 
     args = parser.parse_args()
 
@@ -394,6 +411,7 @@ def parse_args():
 
     pics_out_path = args.picsout + '/'
     screenshot_method = int(args.method)
+    banner = args.banner
 
     if args.csv is not None:
         csv_in_name = args.csv
@@ -426,7 +444,7 @@ def parse_args():
         lazy = None
 
     return csv_in_name, csv_out_name, pics_out_path, screenshot_method, use_csv, use_db, make_csv, \
-        timeout_duration, lazy, be_lazy
+        timeout_duration, lazy, be_lazy, banner
 
 
 def connect_sql(path):
@@ -465,13 +483,13 @@ def set_up_logging(pics_out_path):
 
 def main():
     csv_in_name, csv_out_name, pics_out_path, screenshot_method, use_csv, use_db, make_csv, timeout_duration, lazy, \
-        be_lazy = parse_args()
+        be_lazy, banner = parse_args()
     set_up_logging(pics_out_path)
     print("Taking screenshots")
     if use_csv:
-        screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, lazy, be_lazy)
+        screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, lazy, be_lazy, banner)
     if use_db:
-        screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy)
+        screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy, banner)
 
 
 main()

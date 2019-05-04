@@ -49,9 +49,9 @@ def create_with_db(make_csv, csv_out_name, remove_banner):
                         found_url = htmla.get('href')
                         date = found_url.split('/')[4]
 
-                        if remove_banner:       # add id_ into url if remove_banner is true
+                        if remove_banner:       # add if_ into url if remove_banner is true
                             index = found_url.find('/', 40)
-                            final_url = found_url[:index] + "id_" + found_url[index:]
+                            final_url = found_url[:index] + "if_" + found_url[index:]
                         else:
                             final_url = found_url
 
@@ -120,9 +120,9 @@ def create_with_csv(csv_out_name, csv_in_name, remove_banner):
                                 found_url = htmla.get('href')
                                 date = found_url.split('/')[4]
 
-                                if remove_banner:       # add id_ into archive url if remove_banner is true
+                                if remove_banner:       # add if_ into archive url if remove_banner is true
                                     index = found_url.find('/', 40)
-                                    final_url = found_url[:index] + "id_" + found_url[index:]
+                                    final_url = found_url[:index] + "if_" + found_url[index:]
                                 else:
                                     final_url = found_url
 
