@@ -26,12 +26,24 @@ but with very different mean structural similarity indices.
 """
 
 import numpy as np
+import cv2
 
 from skimage import img_as_float
 from skimage.measure import compare_ssim as ssim
 from skimage import io
 
 from PIL import Image
+
+
+def cropping_images(image_filename_a, image_filename_b):
+    o_width, o_height = image_filename_a.shape[:2]
+    a_width, a_height = image_filename_b.shape[:2]
+    f_width = min(o_width, a_width)
+    f_height = min(o_height, a_height)
+    image_filename_a_cropped = image_filename_a[0:f_width, 0:f_height]
+    image_filename_b_cropped = image_filename_b[0:f_width, 0:f_height]
+
+    return image_filename_a_cropped, image_filename_b_cropped
 
 
 def calculate_ssim(current_image_name, archive_image_name):
@@ -57,10 +69,11 @@ def calculate_ssim(current_image_name, archive_image_name):
     """
 
     current_image = io.imread(current_image_name)
-    current_image_float = img_as_float(current_image)
-
     archive_image = io.imread(archive_image_name)
-    archive_image_float = img_as_float(archive_image)
+    (current_image_cropped, archive_image_cropped) = cropping_images(current_image, archive_image)
+
+    current_image_float = img_as_float(current_image_cropped)
+    archive_image_float = img_as_float(archive_image_cropped)
 
     datarange = archive_image_float.max() - archive_image_float.min()
     ssim_noise = ssim(current_image_float, archive_image_float, multichannel=True, data_range=datarange)
@@ -91,13 +104,14 @@ def calculate_mse(current_image_name, archive_image_name):
 
     current_image = io.imread(current_image_name)
     archive_image = io.imread(archive_image_name)
+    (current_image_cropped, archive_image_cropped) = cropping_images(current_image, archive_image)
 
     # current_image_float = img_as_float(current_image)
     # archive_image_float = img_as_float(archive_image)
     # mse_noise = np.linalg.norm(current_image_float - archive_image_float)
 
-    mse_noise = np.sum((current_image.astype("float") - archive_image.astype("float")) ** 2)
-    mse_noise /= float(current_image.shape[0] * current_image.shape[1])
+    mse_noise = np.sum((current_image_cropped.astype("float") - archive_image_cropped.astype("float")) ** 2)
+    mse_noise /= float(current_image_cropped.shape[0] * current_image_cropped.shape[1])
 
     return mse_noise
 
@@ -123,8 +137,13 @@ def calculate_vec(current_image_name, archive_image_name):
     .. [1] https://rosettacode.org/wiki/Percentage_difference_between_images#Python
 
     """
-    current_image = Image.open(current_image_name)
-    archive_image = Image.open(archive_image_name)
+    current_image = io.imread(current_image_name)
+    archive_image = io.imread(archive_image_name)
+    (current_image_cropped, archive_image_cropped) = cropping_images(current_image, archive_image)
+    current_image = cv2.cvtColor(current_image_cropped, cv2.COLOR_BGR2RGB)
+    current_image = Image.fromarray(current_image)
+    archive_image = cv2.cvtColor(archive_image_cropped, cv2.COLOR_BGR2RGB)
+    archive_image = Image.fromarray(archive_image)
     assert current_image.mode == archive_image.mode, "Different kinds of images."
     assert current_image.size == archive_image.size, "Different sizes."
 
