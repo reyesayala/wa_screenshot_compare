@@ -180,17 +180,10 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
     if return_code != 200 and return_code != 302:
         return return_code
 
-    # command which takes the screenshots
-    command = ""
     if screenshot_method == 0:
-        command = "timeout {5}s google-chrome --headless --hide-scrollbars --disable-gpu --noerrdialogs " \
-                  "--enable-fast-unload --screenshot={0}{1}.{2}.{3}.png --window-size=1024x768 '{4}'"\
-            .format(pics_out_path, archive_id, url_id, date, url, timeout_duration)
-
+        return chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration)
     elif screenshot_method == 2:
-        command = "timeout {5}s xvfb-run --server-args=\"-screen 0, 1024x768x24\" " \
-                  "cutycapt --url='{0}' --out={1}{2}.{3}.{4}.png --delay=2000"\
-            .format(url, pics_out_path, archive_id, url_id, date, timeout_duration)
+        return cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration)
 
     elif screenshot_method == 1:
         try:
@@ -214,22 +207,8 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
         except Exception as e:
             print(e)
             return -4
-    else:
-        pass  # assumes the user entered 0,1,2 as method
 
-    try:
-        if os.system(command) == 0:
-            succeed = 200
-            logging.info("Screenshot successful")
-        else:
-            logging.info("Screenshot unsuccessful")
-            succeed = -5
-    except:
-        logging.info("Screenshot unsuccessful")
-        succeed = -6
-    time.sleep(1)  # xvfb needs time to rest
-
-    return str(succeed)
+    return 0  # assumes the user entered 0,1,2 as method
 
 
 async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration, banner):
@@ -263,16 +242,59 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
     try:
         await page.setViewport({'height': 768, 'width': 1024})
         await page.goto(url, timeout=(int(timeout_duration) * 1000))
+
         if not banner:
             await remove_banner(page)        # edit css of page to remove archive-it banner
+
         await page.screenshot(path='{0}{1}.{2}.{3}.png'.format(pics_out_path, archive_id, url_id, date))
+
     except Exception as e:
-        # await page.close()
-        await browser.close()
+        # https://github.com/GoogleChrome/puppeteer/issues/2269
+        try:
+            await page.close()
+            await browser.close()
+        except:
+            await browser.close()
         raise e
 
-    # await page.close()
-    await browser.close()
+    try:
+        await page.close()
+        await browser.close()
+    except:
+        await browser.close()
+
+
+def chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration):
+    command = "timeout {5}s google-chrome --headless --hide-scrollbars --disable-gpu --noerrdialogs " \
+              "--enable-fast-unload --screenshot={0}{1}.{2}.{3}.png --window-size=1024x768 '{4}'" \
+        .format(pics_out_path, archive_id, url_id, date, url, timeout_duration)
+    try:
+        if os.system(command) == 0:
+            logging.info("Screenshot successful")
+            return 200
+        else:
+            logging.info("Screenshot unsuccessful")
+            return -5
+    except:
+        logging.info("Screenshot unsuccessful")
+        return -6
+
+
+def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration):
+    command = "timeout {5}s xvfb-run --server-args=\"-screen 0, 1024x768x24\" " \
+              "cutycapt --url='{0}' --out={1}{2}.{3}.{4}.png --delay=2000" \
+        .format(url, pics_out_path, archive_id, url_id, date, timeout_duration)
+    try:
+        time.sleep(1)  # cutycapt needs to rest
+        if os.system(command) == 0:
+            logging.info("Screenshot successful")
+            return 200
+        else:
+            logging.info("Screenshot unsuccessful")
+            return -5
+    except:
+        logging.info("Screenshot unsuccessful")
+        return -6
 
 
 async def remove_banner(page):

@@ -2,8 +2,8 @@ import argparse
 import asyncio
 import os
 import sqlite3
-import time
 import csv
+import time
 import urllib.request
 import urllib.error
 from pyppeteer import launch
@@ -133,21 +133,16 @@ def take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, t
     if return_code != 200 and return_code != 302:
         return return_code
 
-    command = ''
-    # commands which takes the screenshots
     if screenshot_method == 0:
-        command = "timeout {4}s google-chrome --headless --hide-scrollbars --disable-gpu --noerrdialogs " \
-                  "--enable-fast-unload --screenshot={0}{1}.{2}.png --window-size=1024x768 '{3}'" \
-            .format(pics_out_path, archive_id, url_id, url, timeout_duration)
+        return chrome_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration)
     elif screenshot_method == 2:
-        command = "timeout {4}s xvfb-run --server-args=\"-screen 0, 1024x768x24\" cutycapt --url='{0}' " \
-                  "--out={1}{2}.{3}.png --delay=2000".format(url, pics_out_path, archive_id, url_id,
-                                                             timeout_duration)
+        return cutycapt_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration)
     elif screenshot_method == 1:
         try:
             asyncio.get_event_loop().run_until_complete(
                 puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration))
             logging.info("Screenshot successful")
+            print("Screenshot successful")
             return 200
         except errors.TimeoutError as e:
             print(e)
@@ -164,22 +159,40 @@ def take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, t
         except Exception as e:
             print(e)
             return -4
-    else:
-        pass  # assumes the user entered 0,1,2 as method
 
+    return 0  # assumes the user entered 0,1,2 as method
+
+
+def chrome_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
+    command = "timeout {4}s google-chrome --headless --hide-scrollbars --disable-gpu --noerrdialogs " \
+              "--enable-fast-unload --screenshot={0}{1}.{2}.png --window-size=1024x768 '{3}'" \
+        .format(pics_out_path, archive_id, url_id, url, timeout_duration)
     try:
         if os.system(command) == 0:
-            succeed = 200
             logging.info("Screenshot successful")
+            return 200
         else:
             logging.info("Screenshot unsuccessful")
-            succeed = -5
+            return -5
     except:  # unknown error
         logging.info("Screenshot unsuccessful")
-        succeed = -6
-    time.sleep(1)  # xvfb needs time to rest
+        return -6
 
-    return str(succeed)
+
+def cutycapt_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
+    command = "timeout {4}s xvfb-run --server-args=\"-screen 0, 1024x768x24\" cutycapt --url='{0}' " \
+              "--out={1}{2}.{3}.png --delay=2000".format(url, pics_out_path, archive_id, url_id, timeout_duration)
+    try:
+        time.sleep(1)  # cutycapt needs to rest
+        if os.system(command) == 0:
+            logging.info("Screenshot successful")
+            return 200
+        else:
+            logging.info("Screenshot unsuccessful")
+            return -5
+    except:  # unknown error
+        logging.info("Screenshot unsuccessful")
+        return -6
 
 
 async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration):
@@ -228,13 +241,21 @@ async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_d
         await page.keyboard.press("Escape")
 
         await page.screenshot(path='{0}{1}.{2}.png'.format(pics_out_path, archive_id, url_id))
+
     except Exception as e:
-        # await page.close()
-        await browser.close()
+        # https://github.com/GoogleChrome/puppeteer/issues/2269
+        try:
+            await page.close()
+            await browser.close()
+        except:
+            await browser.close()
         raise e
 
-    # await page.close()
-    await browser.close()
+    try:
+        await page.close()
+        await browser.close()
+    except:
+        await browser.close()
 
 
 async def click_button(page, button_text):
