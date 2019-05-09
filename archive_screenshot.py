@@ -39,7 +39,8 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
         csv_reader = csv.reader(csv_file_in)
         with open(csv_out_name, 'w+') as csv_file_out:
             csv_writer = csv.writer(csv_file_out, delimiter=',', quoting=csv.QUOTE_ALL)
-            csv_writer.writerow(["archive_id", "url_id", "date", "succeed_code", "archive_url"])
+            csv_writer.writerow(
+                ["archive_id", "url_id", "date", "url", "site_status", "site_message", "screenshot_message"])
 
             count = 0
             compare = '0'
@@ -68,10 +69,11 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
                 print("\nurl #{0} {1}".format(url_id, url))
                 logging.info("url #{0} {1}".format(url_id, url))
 
-                succeed = take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_method,
-                                          timeout_duration, banner)
+                site_status, site_message, screenshot_message = \
+                    take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_method,
+                                    timeout_duration, banner)
 
-                csv_writer.writerow([archive_id, url_id, date, succeed, url])
+                csv_writer.writerow([archive_id, url_id, date, url, site_status, site_message, screenshot_message])
 
 
 def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy, banner):
@@ -97,6 +99,9 @@ def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, time
         Whether or not to remove the Archive-It banner
 
    """
+
+    print("db not fully implemented")
+    return
 
     cursor.execute("create table if not exists archive_index (archiveID int, urlID int, date text, succeed int, "
                    "foreign key(archiveID) references collection_name(archiveID));")
@@ -176,14 +181,14 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
 
     """
 
-    return_code = check_site_availability(url)
-    if return_code != 200 and return_code != 302:
-        return return_code
+    site_status, site_message = check_site_availability(url)
+    if site_status == "FAIL":
+        return site_status, site_message, "Screenshot unsuccessful"
 
     if screenshot_method == 0:
-        return chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration)
+        return site_status, site_message, chrome_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration)
     elif screenshot_method == 2:
-        return cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration)
+        return site_status, site_message, cutycapt_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration)
 
     elif screenshot_method == 1:
         try:
@@ -191,24 +196,25 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
                 puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration, banner))
             logging.info("Screenshot successful")
             print("Screenshot successful")
-            return 200
+            return site_status, site_message, "Screenshot successful"
         except errors.TimeoutError as e:
             print(e)
             logging.info(e)
-            return -1
+            return site_status, site_message, e
         except errors.NetworkError as e:
             print(e)
             logging.info(e)
-            return -2
+            return site_status, site_message, e
         except errors.PageError as e:
             print(e)
             logging.info(e)
-            return -3
+            return site_status, site_message, e
         except Exception as e:
             print(e)
-            return -4
+            logging.info(e)
+            return site_status, site_message, e
 
-    return 0  # assumes the user entered 0,1,2 as method
+    return None, None, None  # assumes the user entered 0,1,2 as method
 
 
 async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration, banner):
@@ -271,13 +277,15 @@ def chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_dura
     try:
         if os.system(command) == 0:
             logging.info("Screenshot successful")
-            return 200
+            print("Screenshot successful")
+            return "Screenshot successful"
         else:
             logging.info("Screenshot unsuccessful")
-            return -5
-    except:
+            print("Screenshot unsuccessful")
+            return "Screenshot unsuccessful"
+    except:  # unknown error
         logging.info("Screenshot unsuccessful")
-        return -6
+        return "Screenshot unsuccessful"
 
 
 def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration):
@@ -288,13 +296,16 @@ def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_du
         time.sleep(1)  # cutycapt needs to rest
         if os.system(command) == 0:
             logging.info("Screenshot successful")
-            return 200
+            print("Screenshot successful")
+            return "Screenshot successful"
         else:
             logging.info("Screenshot unsuccessful")
-            return -5
-    except:
+            print("Screenshot unsuccessful")
+            return "Screenshot unsuccessful"
+    except:  # unknown error
         logging.info("Screenshot unsuccessful")
-        return -6
+        print("Screenshot unsuccessful")
+        return "Screenshot unsuccessful"
 
 
 async def remove_banner(page):
@@ -344,30 +355,32 @@ def check_site_availability(url):
         conn = urllib.request.urlopen(url)
     except urllib.error.HTTPError as e:
         # Return code error (e.g. 404, 501, ...)
-        print('HTTPError: {}'.format(e.code))
-        logging.info('HTTPError: {}'.format(e.code))
-        return int(e.code)
+        error_message = 'HTTPError: {}'.format(e.code)
+        print(error_message)
+        logging.info(error_message)
+        return "FAIL", error_message
     except urllib.error.URLError as e:
         # Not an HTTP-specific error (e.g. connection refused)
-        print('URLError: {}'.format(e.reason))
-        logging.info('URLError: {}'.format(e.reason))
-        return -7
+        error_message = 'URLError: {}'.format(e.reason)
+        print(error_message)
+        logging.info(error_message)
+        return "FAIL", error_message
     except Exception as e:
         # other reasons such as "your connection is not secure"
         print(e)
         logging.info(e)
-        return -8
+        return "FAIL", e
 
     # check if redirected
     if conn.geturl() != url:
         print("Redirected to {}".format(conn.geturl()))
         logging.info("Redirected to {}".format(conn.geturl()))
-        return 302
+        return "LIVE", "Redirected to {}".format(conn.geturl())
 
     # reaching this point means it received code 200
     print("Return code 200")
     logging.info("Return code 200")
-    return 200
+    return "LIVE", "Return code 200"
 
 
 def parse_args():
@@ -499,8 +512,8 @@ def set_up_logging(pics_out_path):
     """
 
     logging.basicConfig(filename=(pics_out_path + "archive_screenshot_log.txt"), filemode='a',
-                        format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',
-                        level=logging.INFO)
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                        datefmt='%d-%b-%y %H:%M:%S %p', level=logging.INFO)
 
 
 def main():

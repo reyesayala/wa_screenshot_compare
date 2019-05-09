@@ -79,14 +79,17 @@ def open_with_csv(curr_csv_name, arch_csv_name, csv_out_name, do_print):
                 try:
                     while True:  # how to check EOF in csv?
 
-                        [carchive_id, curl_id, csucceed, curl] = crow
-                        [aarchive_id, aurl_id, adate, asucceed, aurl] = arow
+                        [carchive_id, curl_id, curl] = crow[:3]
+                        cscreenshot_status = crow[-1]
+                        [aarchive_id, aurl_id, adate, aurl] = arow[:4]
+                        ascreenshot_status = arow[-1]
+
                         curl_id = int(curl_id)
                         aurl_id = int(aurl_id)
 
-                        if curl_id > aurl_id or asucceed != '200':
+                        if curl_id > aurl_id or ascreenshot_status != "Screenshot successful":
                             arow = next(arch_csv_reader)
-                        elif curl_id < aurl_id or csucceed != '200':
+                        elif curl_id < aurl_id or cscreenshot_status != "Screenshot successful":
                             crow = next(curr_csv_reader)
                         else:
                             current_filename = "{0}.{1}.png".format(carchive_id, curl_id)
@@ -94,7 +97,7 @@ def open_with_csv(curr_csv_name, arch_csv_name, csv_out_name, do_print):
                             csv_writer.writerow([curl, aurl, current_filename, archive_filename])
 
                             if do_print:
-                                print("{0}|{1}|{2}|{3}".format(curl, aurl, current_filename, archive_filename))
+                                print("{0}, {1}, {2}, {3}".format(curl, aurl, current_filename, archive_filename))
 
                             arow = next(arch_csv_reader)
 
