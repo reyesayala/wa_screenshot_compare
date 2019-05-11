@@ -186,9 +186,9 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
         return site_status, site_message, "Screenshot unsuccessful"
 
     if screenshot_method == 0:
-        return site_status, site_message, chrome_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration)
+        return site_status, site_message, chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration)
     elif screenshot_method == 2:
-        return site_status, site_message, cutycapt_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration)
+        return site_status, site_message, cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration)
 
     elif screenshot_method == 1:
         try:
@@ -243,7 +243,7 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
 
     """
 
-    browser = await launch()
+    browser = await launch(headless=True, dumpio=True)
     page = await browser.newPage()
     try:
         await page.setViewport({'height': 768, 'width': 1024})
@@ -506,7 +506,7 @@ def set_up_logging(pics_out_path):
         filename: the file to output the logs
         filemode: a as in append
         format:   format of the message
-        datefmt:  format of the date in the message
+        datefmt:  format of the date in the message, date-month-year hour:minute:second AM/PM
         level:    minimum message level accepted
 
     """

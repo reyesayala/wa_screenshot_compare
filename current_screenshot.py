@@ -231,7 +231,7 @@ async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_d
 
     """
 
-    browser = await launch(headless=True)
+    browser = await launch(headless=True, dumpio=True)
     page = await browser.newPage()
     try:
         await page.setViewport({'height': 768, 'width': 1024})
@@ -457,7 +457,7 @@ def set_up_logging(pics_out_path):
         filename: the file to output the logs
         filemode: a as in append
         format:   format of the message
-        datefmt:  format of the date in the message, month/day/year hour:minute:second AM/PM
+        datefmt:  format of the date in the message, month-day-year hour:minute:second AM/PM
         level:    minimum message level accepted
 
     """
