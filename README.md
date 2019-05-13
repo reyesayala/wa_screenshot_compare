@@ -134,9 +134,22 @@ Arguments:
 ### similarity_measures.py
 Contains functions used by calculate_similarity.py which will be used to calculate the scores.
 
-## Authors
-todo
+### crop_banners_from_images.py
+This program crops banners from website images. The user must supply the dimensions of the banner. For example, in order to remove banner from British Library UK OA collection, with screenshots that measure 1024 x 768, use the following dimensions: (0,43,1024,768). The resulting image will have the banner cropped and will be 1024 x 725. The Pillow imaging library must be installed in Python. For more information on this library, see: https://auth0.com/blog/image-processing-in-python-with-pillow/
 
+command syntax:
+```
+python3 crop_banners_from_images.py --input_dir pics_archived_banners/ --output_dir pics_archived_no_banners/ --new_dimensions=0,43,1024,768
+```
+Arguments:
+* input_dir - directory of screenshots with banners that need to be removed
+* output_dir - directory where screenshots without the banners will be saved
+* new_dimensions - dimensions of the banner to remove
+
+
+## Authors
+* **Brenda Reyes Ayala** 
+* **James Sun**
 ## License
 todo
 
