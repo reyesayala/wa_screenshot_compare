@@ -2,8 +2,8 @@ import argparse
 import asyncio
 import os
 import sqlite3
-import time
 import csv
+import time
 import urllib.request
 import urllib.error
 from pyppeteer import launch
@@ -33,7 +33,7 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
         csv_reader = csv.reader(csv_file_in)
         with open(csv_out_name, 'w+') as csv_file_out:
             csv_writer = csv.writer(csv_file_out, delimiter=',', quoting=csv.QUOTE_ALL)
-            csv_writer.writerow(["archive_id", "url_id", "succeed_code", "current_url"])
+            csv_writer.writerow(["archive_id", "url_id", "url", "site_status", "site_message", "screenshot_message"])
 
             count = 0
             for line in csv_reader:
@@ -48,9 +48,10 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
                 print("\nurl #{0} {1}".format(url_id, url))
                 logging.info("url #{0} {1}".format(url_id, url))
 
-                succeed = take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, timeout_duration)
+                site_status, site_message, screenshot_message = \
+                    take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, timeout_duration)
 
-                csv_writer.writerow([archive_id, url_id, succeed, url])
+                csv_writer.writerow([archive_id, url_id, url, site_status, site_message, screenshot_message])
 
 
 def screenshot_db(csv_out_name, make_csv, pics_out_path, screenshot_method, timeout_duration):
@@ -70,6 +71,9 @@ def screenshot_db(csv_out_name, make_csv, pics_out_path, screenshot_method, time
         Duration before timeout when going to each website.
 
     """
+
+    print("db not fully implemented")
+    return
 
     cursor.execute("create table if not exists current_index (archiveID int, urlID int, succeed int, "
                    "foreign key(archiveID) references collection_name(archiveID));")
@@ -130,57 +134,77 @@ def take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, t
 
     """
 
-    return_code = check_site_availability(url)
-    if return_code != 200 and return_code != 302:
-        return return_code
+    site_status, site_message = check_site_availability(url)
+    if site_status == "FAIL":
+        return site_status, site_message, "Screenshot unsuccessful"
 
-    command = ''
-    # commands which takes the screenshots
     if screenshot_method == 0:
-        command = "timeout {4}s google-chrome --headless --hide-scrollbars --disable-gpu --noerrdialogs " \
-                  "--enable-fast-unload --screenshot={0}{1}.{2}.png --window-size=1024x768 '{3}'" \
-            .format(pics_out_path, archive_id, url_id, url, timeout_duration)
+        return site_status, site_message, chrome_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration)
     elif screenshot_method == 2:
-        command = "timeout {4}s xvfb-run --server-args=\"-screen 0, 1024x768x24\" cutycapt --url='{0}' " \
-                  "--out={1}{2}.{3}.png --delay=2000".format(url, pics_out_path, archive_id, url_id,
-                                                             timeout_duration)
+        return site_status, site_message, cutycapt_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration)
     elif screenshot_method == 1:
         try:
             asyncio.get_event_loop().run_until_complete(
                 puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration))
             logging.info("Screenshot successful")
-            return 200
+            print("Screenshot successful")
+            return site_status, site_message, "Screenshot successful"
         except errors.TimeoutError as e:
             print(e)
             logging.info(e)
-            return -1
+            return site_status, site_message, e
         except errors.NetworkError as e:
             print(e)
             logging.info(e)
-            return -2
+            return site_status, site_message, e
         except errors.PageError as e:
             print(e)
             logging.info(e)
-            return -3
+            return site_status, site_message, e
         except Exception as e:
             print(e)
-            return -4
-    else:
-        pass  # assumes the user entered 0,1,2 as method
+            logging.info(e)
+            return site_status, site_message, e
 
+    return None, None, None  # assumes the user entered 0,1,2 as method
+
+
+def chrome_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
+    command = "timeout {4}s google-chrome --headless --hide-scrollbars --disable-gpu --noerrdialogs " \
+              "--enable-fast-unload --screenshot={0}{1}.{2}.png --window-size=1024x768 '{3}'" \
+        .format(pics_out_path, archive_id, url_id, url, timeout_duration)
     try:
         if os.system(command) == 0:
-            succeed = 200
             logging.info("Screenshot successful")
+            print("Screenshot successful")
+            return "Screenshot successful"
         else:
             logging.info("Screenshot unsuccessful")
-            succeed = -5
+            print("Screenshot unsuccessful")
+            return "Screenshot unsuccessful"
     except:  # unknown error
         logging.info("Screenshot unsuccessful")
-        succeed = -6
-    time.sleep(1)  # xvfb needs time to rest
+        print("Screenshot unsuccessful")
+        return "Screenshot unsuccessful"
 
-    return str(succeed)
+
+def cutycapt_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
+    command = "timeout {4}s xvfb-run --server-args=\"-screen 0, 1024x768x24\" cutycapt --url='{0}' " \
+              "--out={1}{2}.{3}.png --delay=2000".format(url, pics_out_path, archive_id, url_id, timeout_duration)
+    try:
+        time.sleep(1)  # cutycapt needs to rest
+        if os.system(command) == 0:
+            logging.info("Screenshot successful")
+            print("Screenshot successful")
+            return "Screenshot successful"
+        else:
+            logging.info("Screenshot unsuccessful")
+            print("Screenshot unsuccessful")
+            return "Screenshot unsuccessful"
+    except:  # unknown error
+        logging.info("Screenshot unsuccessful")
+        print("Screenshot unsuccessful")
+        return "Screenshot unsuccessful"
 
 
 async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration):
@@ -203,14 +227,74 @@ async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_d
     ----------
     .. [1] https://pypi.org/project/pyppeteer/
 
+    .. [2] https://github.com/ukwa/webrender-puppeteer/blob/6fcc719d64dc19a4929c02d3a445a8283bee5195/renderer.js
+
     """
 
-    browser = await launch()
+    browser = await launch(headless=True, dumpio=True)
     page = await browser.newPage()
-    await page.setViewport({'height': 768, 'width': 1024})
-    await page.goto(url, timeout=(int(timeout_duration) * 1000))
-    await page.screenshot(path='{0}{1}.{2}.png'.format(pics_out_path, archive_id, url_id))
-    await browser.close()
+    try:
+        await page.setViewport({'height': 768, 'width': 1024})
+        await page.goto(url, timeout=(int(timeout_duration) * 1000))
+        await page.waitFor(1000)
+        await page.reload(timeout=(int(timeout_duration) * 1000))    # reloading a site can get rid of certain popups
+
+        await click_button(page, "I Accept")        # click through popups and banners, there could be a lot more
+        await click_button(page, "I Understand")
+        await click_button(page, "I Agree")
+        await click_button(page, "Accept Recommended Settings")
+        await click_button(page, "Close")
+        await click_button(page, "Close and Accept")
+        await click_button(page, "OK")
+        await click_button(page, "OK, I Understand.")
+        await click_button(page, "Accept")
+        await click_button(page, "Accept Cookies")
+        await click_button(page, "No Thanks")
+        await page.keyboard.press("Escape")
+
+        await page.screenshot(path='{0}{1}.{2}.png'.format(pics_out_path, archive_id, url_id))
+
+    except Exception as e:
+        # https://github.com/GoogleChrome/puppeteer/issues/2269
+        try:
+            await page.close()
+            await browser.close()
+        except:
+            await browser.close()
+        raise e
+
+    try:
+        await page.close()
+        await browser.close()
+    except:
+        await browser.close()
+
+
+async def click_button(page, button_text):
+    """Execute js script on page to click button
+
+    Parameters
+    ----------
+    page : pyppeteer.page.Page
+        The page to go through
+    button_text: str
+        Name of the button to click
+
+    References
+    ----------
+    .. [1] https://github.com/ukwa/webrender-puppeteer/blob/6fcc719d64dc19a4929c02d3a445a8283bee5195/renderer.js
+
+    Notes
+    -----
+    Right now only clicks popups and banners that are buttons, but some sites have banners with using a or wb_divs
+
+
+    """
+    await page.evaluate('''query => {
+      const elements = [...document.querySelectorAll('button')];
+      const targetElement = elements.find(e => e.innerText.toLowerCase().includes(query));
+      targetElement && targetElement.click();
+      }''', button_text.lower())
 
 
 def check_site_availability(url):
@@ -238,30 +322,32 @@ def check_site_availability(url):
         conn = urllib.request.urlopen(url)
     except urllib.error.HTTPError as e:
         # Return code error (e.g. 404, 501, ...)
-        print('HTTPError: {}'.format(e.code))
-        logging.info('HTTPError: {}'.format(e.code))
-        return int(e.code)
+        error_message = 'HTTPError: {}'.format(e.code)
+        print(error_message)
+        logging.info(error_message)
+        return "FAIL", error_message
     except urllib.error.URLError as e:
         # Not an HTTP-specific error (e.g. connection refused)
-        print('URLError: {}'.format(e.reason))
-        logging.info('URLError: {}'.format(e.reason))
-        return -7
+        error_message = 'URLError: {}'.format(e.reason)
+        print(error_message)
+        logging.info(error_message)
+        return "FAIL", error_message
     except Exception as e:
         # other reasons such as "your connection is not secure"
         print(e)
         logging.info(e)
-        return -8
+        return "FAIL", e
 
     # check if redirected
     if conn.geturl() != url:
         print("Redirected to {}".format(conn.geturl()))
         logging.info("Redirected to {}".format(conn.geturl()))
-        return 302
+        return "LIVE", "Redirected to {}".format(conn.geturl())
 
     # reaching this point means it received code 200
     print("Return code 200")
     logging.info("Return code 200")
-    return 200
+    return "LIVE", "Return code 200"
 
 
 def parse_args():
@@ -371,14 +457,14 @@ def set_up_logging(pics_out_path):
         filename: the file to output the logs
         filemode: a as in append
         format:   format of the message
-        datefmt:  format of the date in the message
+        datefmt:  format of the date in the message, month-day-year hour:minute:second AM/PM
         level:    minimum message level accepted
 
     """
 
     logging.basicConfig(filename=(pics_out_path + "current_screenshot_log.txt"), filemode='a',
-                        format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',
-                        level=logging.INFO)
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                        datefmt='%d-%b-%y %H:%M:%S %p', level=logging.INFO)
 
 
 def main():

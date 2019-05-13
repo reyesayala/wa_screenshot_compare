@@ -1,7 +1,6 @@
 import argparse
 import csv
-
-import similarity_measures
+import importlib
 
 
 def read_input_file(csv_in_name, curr_img_dir, arch_img_dir):
@@ -86,6 +85,7 @@ def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, csv_ou
         If True then the urls and file names and scores will be printed to stdout.
 
     """
+    similarity_measures = importlib.import_module("similarity_measures")
 
     with open(csv_out_name, 'w+') as csv_file_out:
         csv_writer = csv.writer(csv_file_out, delimiter=',', quoting=csv.QUOTE_ALL)
