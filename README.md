@@ -52,11 +52,10 @@ Arguments:
 * banner - (optional) Include to generate URLs that has the banner, default removes banner.
 
 ### current_screenshot.py
-This program takes the CSV or DB with the current website URLS and takes screenshots
-> The output CSV will have six columns: archive ID, URL ID, URL, site status, site message, and screenshot message.
-> site_status - Contains 'LIVE' if the URL can be reached or redirects, and 'FAIL' if the URL could not be reached (ex. 404).
-> site_message - A reason on why site_status was 'LIVE' or 'FAIL'. Such as 'Redirected to http://......' or 'HTTPError: 404'.
-> screenshot_message - a message on whether the screenshot was successful. If site_status is 'FAIL' then screenshot_message is automatically 'Screenshot unsuccessful'. Another common message is 'Navigation Timeout Exceeded'.
+This program takes the CSV or DB with the current website URLS and takes screenshots. The output CSV will have six columns: archive ID, URL ID, URL, site status, site message, and screenshot message: 
+* site_status - Contains 'LIVE' if the URL can be reached or redirects, and 'FAIL' if the URL could not be reached (ex. 404).
+* site_message - A reason on why site_status was 'LIVE' or 'FAIL'. Such as 'Redirected to http://......' or 'HTTPError: 404'.
+* screenshot_message - a message on whether the screenshot was successful. If site_status is 'FAIL' then screenshot_message is automatically 'Screenshot unsuccessful'. Another common message is 'Navigation Timeout Exceeded'.
 > As of right now, method=1 takes the most consistent screenshots.
 
 Command syntax: 
@@ -72,11 +71,10 @@ Arguments:
 * timeout - (optional) Specify duration before timeout for each site, in seconds, default 30 seconds.
 
 ### archive_screenshot.py
-This program takes the CSV or DB with the archive website URLS and takes screenshots.
-> the output CSV will have seven columns, archive ID, URL ID, capture date, URL, site status, site message, and screenshot message.
-> site_status - Contains 'LIVE' if the URL can be reached or redirects, and 'FAIL' if the URL could not be reached (ex. 404).
-> site_message - A reason on why site_status was 'LIVE' or 'FAIL'. Such as 'Redirected to http://......' or 'HTTPError: 404'.
-> screenshot_message - a message on whether the screenshot was successful. If site_status is 'FAIL' then screenshot_message is automatically 'Screenshot unsuccessful'. Another common message is 'Navigation Timeout Exceeded'.
+This program takes the CSV or DB with the archive website URLS and takes screenshots. The output CSV will have seven columns, archive ID, URL ID, capture date, URL, site status, site message, and screenshot message.
+* site_status - Contains 'LIVE' if the URL can be reached or redirects, and 'FAIL' if the URL could not be reached (ex. 404).
+* site_message - A reason on why site_status was 'LIVE' or 'FAIL'. Such as 'Redirected to http://......' or 'HTTPError: 404'.
+* screenshot_message - a message on whether the screenshot was successful. If site_status is 'FAIL' then screenshot_message is automatically 'Screenshot unsuccessful'. Another common message is 'Navigation Timeout Exceeded'.
 > As of right now, method=1 takes the most consistent screenshots.
 
 Command syntax:
