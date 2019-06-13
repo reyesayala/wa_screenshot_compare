@@ -44,7 +44,7 @@ def create_with_csv(csv_in_name, csv_out_name, trace_out_path, timeout_duration)
                 print("url #{0} {1}".format(url_id, url))
                 logging.info("url #{0} {1}".format(url_id, url))
 
-                site_status, site_message, extraction_message = extract_traces(url, archive_id, url_id, trace_out_path, timeout_duration)
+                site_status, site_message, extraction_message = extract_traces(url, archive_id, url_id, date, trace_out_path, timeout_duration)
 
                 csv_writer.writerow([archive_id, url_id, url, site_status, site_message, extraction_message])
 
@@ -187,7 +187,7 @@ async def puppeteer_extract_trace(url, archive_id, url_id, date, trace_out_path,
                               'timeout': int(timeout_duration) * 1000})
         await page.tracing.stop()
         
-        os.rename(trace_path, '{0}{1}_{2}_{3}.json'.format(trace_out_path, archive_id, url_id, date))
+        os.rename(trace_path, '{0}{1}.{2}.{3}.json'.format(trace_out_path, archive_id, url_id, date))
 
     except Exception as e:
         try:

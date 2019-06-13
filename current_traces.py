@@ -181,7 +181,7 @@ async def puppeteer_extract_trace(url, archive_id, url_id, trace_out_path, timeo
                               'timeout': int(timeout_duration) * 1000})
         await page.tracing.stop()
         
-        os.rename(trace_path, '{0}{1}_{2}.json'.format(trace_out_path, archive_id, url_id))
+        os.rename(trace_path, '{0}{1}.{2}.json'.format(trace_out_path, archive_id, url_id))
 
     except Exception as e:
         try:

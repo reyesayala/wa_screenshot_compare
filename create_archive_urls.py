@@ -195,7 +195,7 @@ def parse_args():
 
     remove_banner = not args.banner
 
-    return use_db, use_csv, make_csv, csv_out_name, csv_in_name, remove_banner
+    return use_db, use_csv, make_csv, args.out, args.csv, remove_banner
 
         
 # creates the db and table to store the URLs
