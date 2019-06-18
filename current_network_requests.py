@@ -167,6 +167,7 @@ def create_with_csv(csv_in_name, csv_out_name, csv_index_name, timeout_duration)
         index_writer = IndexWriter(csv_index_name)
         csv_writer = CSVWriter(csv_out_name)
 
+        # Append header info to CSV files
         index_writer.initialize()
         csv_writer.initialize()
 
@@ -184,35 +185,38 @@ def create_with_csv(csv_in_name, csv_out_name, csv_index_name, timeout_duration)
             site_status, site_message, extraction_message = extract_requests(csv_writer, url, archive_id, url_id, timeout_duration)
 
             index_writer.writerow(archive_id, url_id, url, site_status, site_message, extraction_message)
-
-            #writer.writerow(archive_id, url_id, url, site_status)
     
         # Write elements to CSV file
         index_writer.finalize()
         csv_writer.finalize()
 
-#def create_with_db(csv_out_name, timeout_duration, make_csv):
+def create_with_db(csv_out_name, csv_index_name, timeout_duration, make_csv):
     """Extracts network requests using the input database file with current urls.
 
     Parameters
     ----------
     csv_out_name : str
         The CSV file to write the network request urls.
+    csv_index_name : str
+        The CSV file to write the extraction status.
     timeout_duration : str
         Duration before timeout when going to each website.
     make_csv : bool
         Whether or not to also output a CSV file.
 
     """
-"""
+
     cursor.execute("SELECT * FROM current_urls;")
     connection.commit()
     results = cursor.fetchall()
 
+    csv_writer = CSVWriter(csv_out_name)
+    index_writer = IndexWriter(csv_index_name)
+
     if make_csv:
-        csv_file_out = open(csv_out_name, "w+")
-        csv_writer = csv.writer(csv_file_out, delimiter=',', quoting=csv.QUOTE_ALL)
-        csv_writer.writerow(["archive_id", "url_id", "current_url", "site_status", "site_message", "extraction_message"])
+        # Append header info to CSV files
+        csv_writer.initialize()
+        index_writer.initialize()
     
     for row in results:
         archive_id = str(row[0])
@@ -222,17 +226,28 @@ def create_with_csv(csv_in_name, csv_out_name, csv_index_name, timeout_duration)
         print("url #{0} {1}".format(url_id, url))
         logging.info("url #{0} {1}".format(url_id, url))
 
-        site_status, site_message, extraction_message = extract_requests(url, archive_id, url_id, timeout_duration)
+        site_status, site_message, extraction_message = extract_requests(csv_writer, url, archive_id, url_id, timeout_duration)
 
         if make_csv:
-            csv_writer.writerow([archive_id, url_id, url, site_status, site_message, extraction_message])
+            index_writer.writerow(archive_id, url_id, url, site_status, site_message, extraction_message)
 
-        cursor.execute('INSERT INTO current_trace_status VALUES ({0}, {1}, "{2}", "{3}", "{4}", "{5}")'\
-                      .format(archive_id, url_id, url, site_status, site_message, extraction_message))
+        cursor.execute('INSERT INTO current_extraction_status VALUES ({0}, {1}, "{2}", '
+                       '"{3}", "{4}", "{5}")'.format(archive_id, url_id, url, \
+                                              site_status, site_message, extraction_message))
 
+    if make_csv:
+        csv_writer.finalize()
+        index_writer.finalize()
+
+    # Append elements to database
+    for element in csv_writer.rows:
+        cursor.execute('INSERT INTO current_network_requests VALUES ({0}, {1}, "{2}", "{3}")'\
+                .format(element[0], element[1], element[2], element[3]))
+
+    # Commit and close database
     connection.commit()
     connection.close()
-"""
+
 def extract_requests(csv_writer, url, archive_id, url_id, timeout_duration):
     """Fetches url from input CSV and extract network requests 
     
@@ -251,11 +266,9 @@ def extract_requests(csv_writer, url, archive_id, url_id, timeout_duration):
 
     """
 
-    site_status, site_message = check_site_availability(url)
+    site_status, site_message, url = check_site_availability(url)
 
     if site_status == "FAIL":
-        return site_status, site_message, "Extraction unsuccessful"
-    elif site_status == "REDIRECT":
         return site_status, site_message, "Extraction unsuccessful"
 
     try:
@@ -314,7 +327,7 @@ async def puppeteer_extract_requests(csv_writer, url, archive_id, url_id, timeou
     # Intercepts network responses
     async def handle_response(response, csv_writer, archive_id, url_id):
         csv_writer.writerow(archive_id, url_id, response.url, response.status)
-        print("Response => url: {0}, status code: {1}".format(response.url, response.status))
+        # print("Response => url: {0}, status code: {1}".format(response.url, response.status))
 
     page = await browser.newPage()
 
@@ -367,28 +380,28 @@ def check_site_availability(url):
         error_message = 'URLError: {}'.format(e.reason)
         print(error_message)
         logging.info(error_message)
-        return "FAIL", error_message
+        return "FAIL", error_message, url
     except urllib.error.HTTPError as e:
         error_message = 'HTTPError: {}'.format(e.code)
         print(error_message)
         logging.info(error_message)
-        return "FAIL", error_message
+        return "FAIL", error_message, url
     except Exception as e:
         error_message = 'Other: {}'.format(e)
         print(error_message)
         logging.info(error_message)
-        return "FAIL", error_message
+        return "FAIL", error_message, url
 
     # Check if request was a redirect
     if conn.geturl() != url:
         print("Redirected to {}".format(conn.geturl()))
         logging.info("Redirected to {}".format(conn.geturl()))
-        return "REDIRECT", "Redirected to {}".format(conn.geturl())
+        return "REDIRECT", "Redirected to {}".format(conn.geturl()), conn.geturl()
 
     # Successful connection: code 200
     print("Successfully connected to {}".format(url))
     logging.info("Successful connection to {}".format(url))
-    return "LIVE", "Successful connection to {}".format(url)                
+    return "LIVE", "Successful connection to {}".format(url), url                
 
 def parse_args():
     """Parse the arguments passed to in from the commandline
@@ -476,17 +489,25 @@ def connect_sql(path):
     cursor.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='current_urls'")
 
     if cursor.fetchone()[0] == 1:
-        cursor.execute("CREATE TABLE IF NOT EXISTS current_trace_status (archiveID INT, urlID INT, "
+        # Create database tables
+        cursor.execute("CREATE TABLE IF NOT EXISTS current_extraction_status (archiveID INT, urlID INT, "
                        "url TEXT, siteStatus TEXT, siteMessage TEXT, extractionMessage TEXT, "
                        "FOREIGN KEY (archiveID) REFERENCES collection_name(archiveID));")
+
+        cursor.execute("CREATE TABLE IF NOT EXISTS current_network_requests (archiveID INT, urlID INT, "
+                       "url TEXT, statusCode TEXT, FOREIGN KEY (archiveID) REFERENCES "
+                       "collection_name(archiveID));")
         connection.commit()
 
-        cursor.execute("SELECT DISTINCT archiveID from current_trace_status;")
+        # Fetch all archive IDs being worked on in current urls
+        cursor.execute("SELECT DISTINCT archiveID from current_urls;")
         connection.commit()
         results = cursor.fetchall()
 
+        # Remove old results from database corresponding to archive ID in current urls
         for row in results:
-            cursor.execute("DELETE FROM current_trace_status WHERE archiveID = {};".format(row[0]))
+            cursor.execute("DELETE FROM current_extraction_status WHERE archiveID = {};".format(row[0]))
+            cursor.execute("DELETE FROM current_network_requests WHERE archiveID = {};".format(row[0]))
         connection.commit()
 
     else:
@@ -508,7 +529,7 @@ def set_up_logging():
 
     """
 
-    logging.basicConfig(filename="current_traces_log.txt", filemode='a',
+    logging.basicConfig(filename="current_extraction_log.txt", filemode='a',
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                         datefmt='%d-%b-%y %H:%M:%S %p', level=logging.INFO)
 
@@ -516,12 +537,11 @@ def main():
     csv_in_name, csv_out_name, csv_index_name, timeout_duration, use_csv, use_db, make_csv = parse_args()
     set_up_logging()
 
-    print("Extracting trace files...")
+    print("Extracting network requests...")
     if use_csv:
         create_with_csv(csv_in_name, csv_out_name, csv_index_name, timeout_duration)
     if use_db:
-        pass
-        #create_with_db(csv_out_name, timeout_duration, make_csv)
+        create_with_db(csv_out_name, csv_index_name, timeout_duration, make_csv)
 
 main()
 
