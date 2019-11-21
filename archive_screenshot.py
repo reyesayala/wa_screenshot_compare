@@ -213,6 +213,14 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
             print(e)
             logging.info(e)
             return site_status, site_message, e
+        except asyncio.futures.InvalidStateError as e:
+            print(e)
+            logging.info(e)
+            return site_status, site_message, e
+        except asyncio.streams.IncompleteReadError as e:
+            print(e)
+            logging.info(e)
+            return site_status, site_message, e
 
     return None, None, None  # assumes the user entered 0,1,2 as method
 
@@ -243,7 +251,7 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
 
     """
 
-    browser = await launch(headless=True, dumpio=True)
+    browser = await launch(headless=True, dumpio=True, args=["--disable-gpu", "--no-sandbox"])
     page = await browser.newPage()
     try:
         await page.setViewport({'height': 768, 'width': 1024})
