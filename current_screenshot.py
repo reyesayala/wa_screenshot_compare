@@ -239,7 +239,7 @@ async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_d
 
     """
 
-    browser = await launch(headless=True, dumpio=True, args=["--disable-gpu", "--no-sandbox"])
+    browser = await launch(headless=True, dumpio=True, args=["--disable-gpu"])
     page = await browser.newPage()
     try:
         await page.setViewport({'height': 768, 'width': 1024})
