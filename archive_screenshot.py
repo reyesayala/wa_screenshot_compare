@@ -11,7 +11,7 @@ from pyppeteer import errors
 import logging
 
 
-def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, lazy, be_lazy, banner):
+def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, banner, read_range):
     """Fetches urls from the input CSV and takes a screenshot
 
     Parameters
@@ -42,12 +42,18 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
             csv_writer.writerow(
                 ["archive_id", "url_id", "date", "url", "site_status", "site_message", "screenshot_message"])
 
-            count = 0
-            compare = '0'
-            for line in csv_reader:
-                if count == 0:      # skip the header
-                    count += 1
-                    continue
+            line_count = 0
+            next(csv_reader)  # skip header
+            while True:
+                try:
+                    line = next(csv_reader)
+                except StopIteration:
+                    break
+                line_count += 1
+
+                if read_range is not None:  # skip if not within range
+                    if line_count < read_range[0] or line_count > read_range[1]:
+                        continue
 
                 archive_id = str(line[0])
                 url_id = line[1]
@@ -56,15 +62,6 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
 
                 if url == "":
                     continue
-
-                if be_lazy is True:  # makes running faster by not doing hundreds of archive sites
-                    if url_id != compare:
-                        count = 0
-                        compare = url_id
-                    else:
-                        count += 1
-                        if count > lazy:
-                            continue
 
                 print("\nurl #{0} {1}".format(url_id, url))
                 logging.info("url #{0} {1}".format(url_id, url))
@@ -76,7 +73,7 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
                 csv_writer.writerow([archive_id, url_id, date, url, site_status, site_message, screenshot_message])
 
 
-def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy, banner):
+def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, banner):
     """Fetches urls from the input DB and takes a screenshot
 
     Parameters
@@ -213,6 +210,14 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
             print(e)
             logging.info(e)
             return site_status, site_message, e
+        except asyncio.futures.InvalidStateError as e:
+            print(e)
+            logging.info(e)
+            return site_status, site_message, e
+        except asyncio.streams.IncompleteReadError as e:
+            print(e)
+            logging.info(e)
+            return site_status, site_message, e
 
     return None, None, None  # assumes the user entered 0,1,2 as method
 
@@ -248,6 +253,7 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
     try:
         await page.setViewport({'height': 768, 'width': 1024})
         await page.goto(url, timeout=(int(timeout_duration) * 1000))
+        await page.waitFor(1000)
 
         if not banner:
             await remove_banner(page)        # edit css of page to remove archive-it banner
@@ -421,9 +427,11 @@ def parse_args():
                                                    "0 for chrome, 1 for puppeteer, 2 for cutycapt")
     parser.add_argument("--timeout", type=str, help="(optional) Specify duration before timeout, "
                                                     "in seconds, default 30 seconds")
-    parser.add_argument("--lazy", type=int, help="(optional) Continues to the next archive after taking n pictures")
     parser.add_argument("--banner", action='store_true',
                         help="(optional) Include to keep banner, default removes banner")
+    parser.add_argument("--range", type=str, help="(optional) Specify which line numbers to read and take"
+                                                  " screenshots of, inclusive. syntax: low,high. ex. 0,1000. "
+                                                  "default takes screenshots of everything.")
 
     args = parser.parse_args()
 
@@ -471,15 +479,13 @@ def parse_args():
     else:
         timeout_duration = args.timeout
 
-    if args.lazy is not None:
-        be_lazy = True
-        lazy = int(args.lazy)
-    else:
-        be_lazy = False
-        lazy = None
+    read_range = args.range
+    if read_range is not None:
+        temp = read_range.split(",")
+        read_range = (int(temp[0]), int(temp[1]))
 
     return csv_in_name, csv_out_name, pics_out_path, screenshot_method, use_csv, use_db, make_csv, \
-        timeout_duration, lazy, be_lazy, banner
+        timeout_duration, banner, read_range
 
 
 def connect_sql(path):
@@ -517,14 +523,14 @@ def set_up_logging(pics_out_path):
 
 
 def main():
-    csv_in_name, csv_out_name, pics_out_path, screenshot_method, use_csv, use_db, make_csv, timeout_duration, lazy, \
-        be_lazy, banner = parse_args()
+    csv_in_name, csv_out_name, pics_out_path, screenshot_method, use_csv, use_db, make_csv, timeout_duration, banner, \
+        read_range = parse_args()
     set_up_logging(pics_out_path)
     print("Taking screenshots")
     if use_csv:
-        screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, lazy, be_lazy, banner)
+        screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, banner, read_range)
     if use_db:
-        screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy, banner)
+        screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, banner)
 
 
 main()
