@@ -9,9 +9,11 @@ import urllib.error
 from pyppeteer import launch
 from pyppeteer import errors
 import logging
+import signal
+import re
 
 
-def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration):
+def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range, chrome_args, screensize):
     """Fetches urls from the input CSV and takes a screenshot
 
     Parameters
@@ -35,11 +37,18 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
             csv_writer = csv.writer(csv_file_out, delimiter=',', quoting=csv.QUOTE_ALL)
             csv_writer.writerow(["archive_id", "url_id", "url", "site_status", "site_message", "screenshot_message"])
 
-            count = 0
-            for line in csv_reader:
-                if count == 0:      # skip the header
-                    count += 1
-                    continue
+            line_count = 0
+            next(csv_reader)  # skip header
+            while True:
+                try:
+                    line = next(csv_reader)
+                except StopIteration:
+                    break
+                line_count += 1
+
+                if read_range is not None:  # skip if not within range
+                    if line_count < read_range[0] or line_count > read_range[1]:
+                        continue
 
                 archive_id = line[0]
                 url_id = line[1]
@@ -48,8 +57,8 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
                 print("\nurl #{0} {1}".format(url_id, url))
                 logging.info("url #{0} {1}".format(url_id, url))
 
-                site_status, site_message, screenshot_message = \
-                    take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, timeout_duration)
+                site_status, site_message, screenshot_message = take_screenshot(archive_id, url_id, url, pics_out_path,
+                    screenshot_method, timeout_duration, chrome_args, screensize)
 
                 csv_writer.writerow([archive_id, url_id, url, site_status, site_message, screenshot_message])
 
@@ -109,7 +118,7 @@ def screenshot_db(csv_out_name, make_csv, pics_out_path, screenshot_method, time
         csv_file_out.close()
 
 
-def take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, timeout_duration):
+def take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, timeout_duration, chrome_args, screensize):
     """Calls the function or command to take a screenshot
 
     Parameters
@@ -145,7 +154,7 @@ def take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, t
     elif screenshot_method == 1:
         try:
             asyncio.get_event_loop().run_until_complete(
-                puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration))
+                puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, chrome_args, screensize))
             logging.info("Screenshot successful")
             print("Screenshot successful")
             return site_status, site_message, "Screenshot successful"
@@ -215,7 +224,7 @@ def cutycapt_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration
         return "Screenshot unsuccessful"
 
 
-async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration):
+async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, chrome_args, screensize):
     """Take screenshot using the pyppeteer package.
 
     Parameters
@@ -239,11 +248,11 @@ async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_d
 
     """
 
-    browser = await launch(headless=True, dumpio=True, args=["--disable-gpu"])
+    browser = await launch(headless=True, dumpio=True, args=chrome_args)
     page = await browser.newPage()
     try:
-        await page.setViewport({'height': 768, 'width': 1024})
-        await page.goto(url, timeout=(int(timeout_duration) * 1000))
+        await page.setViewport({'height': screensize[0], 'width': screensize[1]})
+        await page.goto(url, timeout=(timeout_duration * 1000))
         await page.waitFor(1000)
         await page.reload(timeout=(int(timeout_duration) * 1000))    # reloading a site can get rid of certain popups
 
@@ -384,26 +393,33 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
+    #parser.add_argument("--db", type=str, help="Input DB file with urls")
+
     parser.add_argument("--csv", type=str, help="Input CSV file with current urls")
-    parser.add_argument("--db", type=str, help="Input DB file with urls")
     parser.add_argument("--picsout", type=str, help="Directory to output the screenshots")
     parser.add_argument("--indexcsv", type=str, help="The CSV file to write the index")
-    parser.add_argument("--method", type=int, help="Which method to take the screenshots, "
-                                                   "0 for chrome, 1 for puppeteer, 2 for cutycapt")
-    parser.add_argument("--timeout", type=str, help="(optional) Specify duration before timeout for each site, "
-                                                    "in seconds, default 30 seconds")
+    parser.add_argument("--method", type=int,
+                        help="Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt")
+    parser.add_argument("--timeout", type=str,
+                        help="(optional) Specify duration before timeout for each site, in seconds, default 30 seconds")
+    parser.add_argument("--range", type=str,
+                        help="(optional) Specify to take screenshots between these lines, inclusive. "
+                             "Syntax: low,high. ex. 0,1000. default takes screenshots of everything.")
+    parser.add_argument("--chrome-args", type=str,
+                        help="(optional) Additional arguments for pyppeteer chrome. "
+                             "ex. --args=\"--disable-gpu --no-sandbox\"")
+    parser.add_argument("--screen-size", type=str,
+                        help="(optional) Specify to take screenshots of size, affects browser viewport too. "
+                             "Syntax: height,width. ex 600,800. default size is 768,1024")
 
     args = parser.parse_args()
 
     # some command line argument error checking
-    if args.csv is not None and args.indexcsv is None:
+    if args.indexcsv is None:
         print("invalid output index file\n")
         exit()
-    if args.csv is None and args.db is None:
+    if args.csv is None:
         print("Must provide input file\n")
-        exit()
-    if args.csv is not None and args.db is not None:
-        print("must only use only one type of input file\n")
         exit()
     if args.picsout is None:
         print("Must specify output path for pictures\n")
@@ -414,32 +430,57 @@ def parse_args():
 
     pics_out_path = args.picsout + '/'
     screenshot_method = int(args.method)
+    csv_in_name = args.csv
+    csv_out_name = args.indexcsv
 
-    if args.csv is not None:
-        csv_in_name = args.csv
-        use_csv = True
+    # if args.db is not None:
+    #     connect_sql(args.db)
+    #     use_db = True
+    # else:
+    #     use_db = False
+
+    timeout_duration = args.timeout
+    if timeout_duration is None:
+        timeout_duration = 30
     else:
-        use_csv = False
+        try:
+            timeout_duration = int(args.timeout)
+        except:
+            print("Invalid format for timeout")
+            exit()
 
-    if args.db is not None:
-        connect_sql(args.db)
-        use_db = True
+    read_range = args.range
+    if read_range is not None:
+        try:
+            temp = read_range.split(",")
+            read_range = [int(temp[0]), int(temp[1])]
+            assert read_range[0] <= read_range[1]
+        except:
+            print("Invalid format for range")
+            exit()
+
+    chrome_args = args.chrome_args
+    if chrome_args is not None:
+        try:
+            chrome_args = re.sub(" +", " ", chrome_args)
+            chrome_args = chrome_args.strip().split(" ")
+            assert len(chrome_args) >= 1
+        except:
+            print("Invalid format for args")
+            exit()
+
+    screensize = args.screen_size
+    if screensize is None:
+        screensize = [768, 1024]
     else:
-        use_db = False
+        try:
+            temp = args.screen_size.split(",")
+            screensize = [int(temp[0]), int(temp[1])]
+        except:
+            print("Invalid format for screensize")
+            exit()
 
-    if args.indexcsv is not None:
-        csv_out_name = args.indexcsv
-        make_csv = True
-    else:
-        make_csv = False
-
-    if args.timeout is None:
-        timeout_duration = "30"
-    else:
-        timeout_duration = args.timeout
-
-    return csv_in_name, csv_out_name, pics_out_path, screenshot_method, use_db, use_csv, make_csv, timeout_duration
-
+    return csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range, chrome_args, screensize
 
 def connect_sql(path):
     """Connects the DB file. """
@@ -475,16 +516,21 @@ def set_up_logging(pics_out_path):
                         datefmt='%d-%b-%y %H:%M:%S %p', level=logging.INFO)
 
 
+def signal_handler(sig, frame):
+    raise Exception("User interrupted")
+
+
 def main():
-    csv_in_name, csv_out_name, pics_out_path, screenshot_method, use_db, use_csv, make_csv, timeout_duration \
+    csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range, chrome_args, screensize \
         = parse_args()
     set_up_logging(pics_out_path)
+    signal.signal(signal.SIGINT, signal_handler)
 
     print("Taking screenshots")
-    if use_csv:
-        screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration)
-    if use_db:
-        screenshot_db(csv_out_name, make_csv, pics_out_path, screenshot_method, timeout_duration)
+    # if use_csv:
+    screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range, chrome_args, screensize)
+    # if use_db:
+    #     screenshot_db(csv_out_name, make_csv, pics_out_path, screenshot_method, timeout_duration)
 
 
 main()
