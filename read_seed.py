@@ -3,6 +3,21 @@ import csv
 
 
 def parse_csv(csv_in_name, csv_out_name, archive_name, do_sort):
+    """Reads the input seed file and writes the urls to the output files
+
+    Parameters
+    ----------
+    csv_in_name : str
+        Input CSV file with the seed urls.
+    csv_out_name : str
+        The DB file to store the urls.
+    do_sort : bool
+        Whether or not the output is sorted.
+    archive_name : str
+        Name of the archive
+    """
+
+
     with open(csv_in_name, "r") as csv_file_in:
         csv_reader = csv.reader(csv_file_in)
         with open(csv_out_name, "w+", newline='') as csv_file_out:
@@ -30,6 +45,21 @@ def parse_csv(csv_in_name, csv_out_name, archive_name, do_sort):
 
 
 def parse_args():
+    """Parses the arguments passed in from the command line.
+
+    Returns
+    -------
+    csv_in_name : str
+        The CSV file with the seed urls.
+    csv_out_name : str
+        The CSV file to store the urls.
+    do_sort : bool
+        Whether or not the output is sorted.
+    archive_name : str
+        Name of the archive
+
+    """
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv", type=str, help="The CSV file with the seed urls")
     parser.add_argument("--out", type=str, help="The CSV file to write the urls")

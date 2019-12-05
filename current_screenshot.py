@@ -11,6 +11,27 @@ import signal
 
 
 def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, timeout_duration, read_range, chrome_args, screensize):
+    """Fetches urls from the input CSV and takes a screenshot
+
+    Parameters
+    ----------
+    csv_in_name : str
+        The CSV file with the current urls.
+    csv_out_name : str
+        The CSV file to write the index.
+    pics_out_path : str
+        Directory to output the screenshots.
+    timeout_duration : str
+        Duration before timeout when going to each website.
+    read_range : list
+        Contains two int which tell the programs to only take screenshots between these lines in the csv_in.
+    chrome_args : list
+        Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
+    screensize : list
+        Contains two int which are height and width of the browser viewport.
+
+    """
+    
     with open(csv_in_name, 'r') as csv_file_in:
         csv_reader = csv.reader(csv_file_in)
         with open(csv_out_name, 'w+', newline='') as csv_file_out:
@@ -44,13 +65,47 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, timeout_duration, r
 
 
 def take_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, chrome_args, screensize):
+    """Calls the function or command to take a screenshot
+
+    Parameters
+    ----------
+    archive_id : str
+        The archive ID.
+    url_id : str
+        The url ID.
+    date : str
+        The date of the archive capture.
+    url : str
+        The url to take a screenshot of.
+    pics_out_path : str
+        Directory to output the screenshots.
+    timeout_duration : str
+        Duration before timeout when going to each website.
+    chrome_args : list
+        Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
+    screensize : list
+        Contains two int which are height and width of the browser viewport.
+
+    Returns
+    -------
+    site_status : str
+        LIVE if website can still be reached or is redirected.
+        FAIL if not.
+    site_message : str
+        An error describing why the site can't be reached or a message saying the site was redirected.
+    screenshot_message : str
+        Message indicating whether the screenshot was successful.
+
+    """
+    
     site_status, site_message = check_site_availability(url)
     if site_status == "FAIL":
         return site_status, site_message, "Screenshot unsuccessful"
 
     try:
-        asyncio.get_event_loop().run_until_complete(
-            puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, chrome_args, screensize))
+        loop = asyncio.get_event_loop()
+        task = asyncio.gather(puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, chrome_args, screensize))
+        result = loop.run_until_complete(task)
         print("Screenshot successful")
         logging.info("Screenshot successful")
         return site_status, site_message, "Screenshot successful"
@@ -78,9 +133,39 @@ def take_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, ch
         print(e)
         logging.info(e)
         return site_status, site_message, e
+    except:
+        print("Unknown error")
+        logging.info("Unknown error")
+        return site_status, site_message, "Unknown error"
 
 
 async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, chrome_args, screensize):
+    """Take screenshot using the pyppeteer package.
+
+    Parameters
+    ----------
+    archive_id : str
+        The archive ID.
+    url_id : str
+        The url ID.
+    date : str
+        The date of the archive capture.
+    url : str
+        The url to take a screenshot of.
+    pics_out_path : str
+        Directory to output the screenshots.
+    timeout_duration : str
+        Duration before timeout when going to each website.
+    chrome_args : list
+        Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
+    screensize : list
+        Contains two int which are height and width of the browser viewport.
+
+    References
+    ----------
+    .. [1] https://pypi.org/project/pyppeteer/
+
+    """
 
     browser = await launch(headless=True, dumpio=True, args=chrome_args)
     page = await browser.newPage()
@@ -129,6 +214,28 @@ async def click_button(page, button_text):
 
 
 def check_site_availability(url):
+    """Run a request to see if the given url is available.
+
+    Parameters
+    ----------
+    url : str
+        The url to check.
+
+    Returns
+    -------
+    site_status : str
+        LIVE if website can still be reached or is redirected.
+        FAIL if not.
+    site_message : str
+        An error describing why the site can't be reached or a message saying the site was redirected.
+
+    References
+    ----------
+    .. [1] https://stackoverflow.com/questions/1726402/in-python-how-do-i-use-urllib-to-see-if-a-website-is-404-or-200
+
+
+    """
+
     try:
         conn = urllib.request.urlopen(url)
     except urllib.error.HTTPError as e:
@@ -148,6 +255,11 @@ def check_site_availability(url):
         print(e)
         logging.info(e)
         return "FAIL", e
+    except:
+        # broad exception for anything else
+        print("Unknown error")
+        logging.info("Unknown error")
+        return "FAIL", "Unknown error"
 
     # check if redirected
     if conn.geturl() != url:
@@ -162,6 +274,27 @@ def check_site_availability(url):
 
 
 def parse_args():
+    """Parses the arguments passed in from the command line.
+
+    Returns
+    ----------
+    csv_in_name : str
+        The CSV file with the current urls.
+    csv_out_name : str
+        The CSV file to write the index.
+    pics_out_path : str
+        Directory to output the screenshots.
+    timeout_duration : str
+        Duration before timeout when going to each website.
+    read_range : list
+        Contains two int which tell the programs to only take screenshots between these lines in the csv_in.
+    chrome_args : list
+        Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
+    screensize : list
+        Contains two int which are height and width of the browser viewport.
+
+    """
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv", type=str, help="Input CSV file with current urls")
     parser.add_argument("--picsout", type=str, help="Directory to output the screenshots")

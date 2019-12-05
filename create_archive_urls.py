@@ -8,6 +8,17 @@ from bs4 import BeautifulSoup
 
 
 def create_with_csv(csv_out_name, csv_in_name):
+    """Finds the archive urls using the input csv file with current urls, and outputs it into a csv.
+
+    Parameters
+    ----------
+    csv_in_name : str
+        The CSV file with the current urls.
+    csv_out_name : str
+        The CSV file to write the archive urls.
+
+    """
+
     archive_header = "https://www.webarchive.org.uk/wayback/archive/*/"
 
     with open(csv_in_name, "r") as csv_file_in:
@@ -48,6 +59,16 @@ def create_with_csv(csv_out_name, csv_in_name):
 
 
 async def fetch_html(url):
+    """Uses pyppeteer to navigate to the ukarchive website to grab all the html
+    
+    Parameters
+    ----------
+    url : str
+        The ukarchive url
+
+
+    """
+
     browser = await launch(headless=True)
     page = await browser.newPage()
     await page.setViewport({'height': 768, 'width': 1024})
@@ -61,6 +82,16 @@ async def fetch_html(url):
 
 
 def parse_args():
+    """Parses the arguments passed in from the command line.
+
+    Returns
+    -------
+    csv_in_name : str
+        The CSV file with the current urls.
+    csv_out_name : str
+        The CSV file to write the archive urls.
+
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv", type=str, help="Input CSV file with current urls")
     parser.add_argument("--out", type=str, help="The CSV file to write the urls")
