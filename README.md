@@ -20,7 +20,7 @@ conda deactivate
 > **Notes:** Including the -h flag in any of the programs will display a description of all the command line flags.
 
 ### read_seed.py
-This program takes a CSV file with the seed website URLs and outputs it into another CSV or a DB.
+This program takes a CSV file with the seed website URLs and outputs it into another CSV.
 > A valid seed csv file should have the URLs as the first column, other columns are ignored.
 > The output CSV file will have three columns, archive ID, URL ID, and URL.
 
@@ -30,15 +30,15 @@ python3 read_seed.py --csv=your/directory/Collection-seed-list.csv --db=urls.db 
 --name="Collection Name" --sort
 ```
 Arguments:
-* csv - The CSV file with the seed URLs. Interchangeable with --db as only one type of input is allowed.
-* db - The DB file to store the URLs.
+* csv - The CSV file with the seed URLs. 
+* db - The DB file to store the URLs. DEPRECATED
 * out - The CSV file to write the URLs.
 * ext - ID of the archive.
 * name - Name of the archive.
 * sort - (optional) Include to sort the output.
 
 ### create-archive_urls.py
-This program takes the CSV or DB from the previous program and gets the Archive-It archive URL.  
+This program takes the CSV from read_seed.py and gets the Archive-It archive URL.  
 > The output CSV file will have three columns, archive ID, URL ID, and URL.
 
 Command syntax: 
@@ -46,49 +46,53 @@ Command syntax:
 python3 create_archive_urls.py --csv=current_urls.csv --db=urls.db --out=archive_urls.csv --banner
 ```
 Arguments:
-* csv - Input CSV file with current URLs. Interchangeable with --db as only one type of input is allowed.
-* db - Input DB file with URLs, output is automatically inserted in db.
+* csv - Input CSV file with current URLs. 
+* db - Input DB file with URLs, output is automatically inserted in db. DEPRECATED
 * out - The CSV file to write the URLs.
 * banner - (optional) Include to generate URLs that has the banner, default removes banner.
 
 ### current_screenshot.py
-This program takes the CSV or DB with the current website URLS and takes screenshots. The output CSV will have six columns: archive ID, URL ID, URL, site status, site message, and screenshot message: 
+This program takes the CSV with the current website URLS and takes screenshots. The output CSV will have six columns: archive ID, URL ID, URL, site status, site message, and screenshot message: 
 * site_status - Contains 'LIVE' if the URL can be reached or redirects, and 'FAIL' if the URL could not be reached (ex. 404).
 * site_message - A reason on why site_status was 'LIVE' or 'FAIL'. Such as 'Redirected to http://......' or 'HTTPError: 404'.
 * screenshot_message - a message on whether the screenshot was successful. If site_status is 'FAIL' then screenshot_message is automatically 'Screenshot unsuccessful'. Another common message is 'Navigation Timeout Exceeded'.
-> As of right now, method=1 takes the most consistent screenshots.
+> As of right now, method=0 and 2 are deprecated
 
 Command syntax: 
 ```
-python3 current_screenshots.py --csv=current_urls.csv --db=urls.db --picsout=current_pics/ --indexcsv=current_index.csv --method=0 --timeout=30
+python3 current_screenshots.py --csv=current_urls.csv --picsout=current_pics/ --indexcsv=current_index.csv --method=1 --timeout=30 --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024
 ```
 Arguments:
-* csv - Input CSV file with current URLs. Interchangeable with --db as only one type of input is allowed.
-* db - Input DB file with URLs.
+* csv - Input CSV file with current URLs. 
 * picsout - Directory to output the screenshots.
 * indexcsv - The CSV file to write the index.
 * method - Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
 * timeout - (optional) Specify duration before timeout for each site, in seconds, default 30 seconds.
+* range - (optional) Specify to take screenshots between these lines, inclusive. Syntax: low,high. ex. 0,1000. default takes screenshots of everything.
+* chrome-args - (optional) Additional arguments for pyppeteer chrome. ex. --args="--disable-gpu --no-sandbox".
+* screen-size - (optional) Specify to take screenshots of size, affects browser viewport too. Syntax: height,width. ex 600,800. default size is 768,1024.
 
 ### archive_screenshot.py
-This program takes the CSV or DB with the archive website URLS and takes screenshots. The output CSV will have seven columns, archive ID, URL ID, capture date, URL, site status, site message, and screenshot message.
+This program takes the CSV with the archive website URLS and takes screenshots. The output CSV will have seven columns, archive ID, URL ID, capture date, URL, site status, site message, and screenshot message.
 * site_status - Contains 'LIVE' if the URL can be reached or redirects, and 'FAIL' if the URL could not be reached (ex. 404).
 * site_message - A reason on why site_status was 'LIVE' or 'FAIL'. Such as 'Redirected to http://......' or 'HTTPError: 404'.
 * screenshot_message - a message on whether the screenshot was successful. If site_status is 'FAIL' then screenshot_message is automatically 'Screenshot unsuccessful'. Another common message is 'Navigation Timeout Exceeded'.
-> As of right now, method=1 takes the most consistent screenshots.
+> As of right now, method=0 and 2 are deprecated
 
 Command syntax:
 ```
-python3 archive_screenshot.py --csv=archive_csv.csv --db=urls.db --picsout=archive_pics/ --indexcsv=archive_index.csv --method= 0 --timeout=30 --lazy=1
+python3 archive_screenshot.py --csv=archive_csv.csv  --picsout=archive_pics/ --indexcsv=archive_index.csv --method=1 --timeout=30 --banner --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024
 ```
 Arguments:
-* csv - Input CSV file with archive URLs. Interchangeable with --db as only one type of input is allowed.
-* db - Input DB file with URLs.
+* csv - Input CSV file with archive URLs. 
 * picsout - Directory to output the screenshots.
 * indexcsv - The CSV file to write the index.
 * method - Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
 * timeout - (optional) Specify duration before timeout for each site, in seconds, default 30 seconds.
-* lazy - (optional) Makes the program continue to the next archive after taking n pictures.
+* banner - (optional) Include to keep banner, default removes banner.
+* range - (optional) Specify to take screenshots between these lines, inclusive. Syntax: low,high. ex. 0,1000. default takes screenshots of everything.
+* chrome-args - (optional) Additional arguments for pyppeteer chrome. ex. --args="--disable-gpu --no-sandbox".
+* screen-size - (optional) Specify to take screenshots of size, affects browser viewport too. Syntax: height,width. ex 600,800. default size is 768,1024.
 
 ### get_file_names.py
 This program outputs a CSV file which maps the current and archive URLs with their respective screenshots.
@@ -101,7 +105,7 @@ python3 get_file_names.py --currcsv=current_index/ --archcsv=archive_index/ --db
 Arguments:
 * currcsv - The CSV file with the current screenshots index.
 * archcsv - The CSV file with the archive screenshots index.
-* db - Input DB file with urls. Interchangeable with using --currcsv and --archcsv since only one type of input is allowed. 
+* db - Input DB file with urls. DEPRECATED
 * out - The CSV file to write the urls and file names. 
 * print - (optional) Include to print urls and file names to stdout, default doesn't print.
 
