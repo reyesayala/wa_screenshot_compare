@@ -115,11 +115,14 @@ This program outputs a CSV file where each current screenshot is mapped to only 
 
 command syntax:
 ```
-python3 randomly_select_screenshots.py --csv=file_names.csv --out=selected_file_names.csv
+python3 randomly_select_screenshots.py --csv=file_names.csv --out=selected_file_names.csv --num=5 --total=1000
 ```
 Arguments:
 * csv - The CSV file with screenshot file names.
 * out - The CSV file to write the newly selected file names.
+* num - Number of random screenshots to take for each ID.
+* total - Total number of screenshots to take.
+* recent - TODO take the screenshot of the most recent archive instead
 
 ### calculate_similarity.py
 This program gets all the screenshots and calls functions in similarity_measures.py to calculate the image similarity socres.
