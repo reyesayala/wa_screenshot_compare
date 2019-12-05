@@ -3,8 +3,8 @@ import csv
 import argparse
 
 
-def make_selection(input_csv, out_csv):
-    """Randomly select only one archive screenshot for each current screenshot.
+def make_selection(input_csv, out_csv, num):
+    """Randomly select a number of archive screenshot for each current screenshot.
 
     Parameters
     ----------
@@ -12,7 +12,8 @@ def make_selection(input_csv, out_csv):
         Path of the input CSV file which contains the urls and file names.
     out_csv : str
         Path of the output CSV file which can be written to.
-
+    num : int
+        The number of screenshots to choose for each ID
     """
 
     print("File name: ", input_csv)
@@ -36,8 +37,9 @@ def make_selection(input_csv, out_csv):
                 if compare_name != current_image_name:
                     compare_name = current_image_name
                     if len(holder) != 0:
-                        chosen_row = random.choice(holder)
-                        csv_writer.writerow(chosen_row)
+                        chosen_rows = random.sample(holder, min(num, len(holder)))
+                        for chosen_row in chosen_rows:
+                            csv_writer.writerow(chosen_row)
                         holder.clear()
                 holder.append(row)
 
@@ -57,6 +59,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv", type=str, help="The CSV file with screenshot file names")
     parser.add_argument("--out", type=str, help="The CSV file to write the newly selected file names")
+    parser.add_argument("--num", type=int, help="Specify to choose a random number of screenshot per ID")
 
     args = parser.parse_args()
 
@@ -67,13 +70,19 @@ def parse_args():
     if args.out is None:
         print("Must provide output file")
         exit()
+    if args.num is None:
+        print("Must provide number of random files")
+        exit()
+    if args.num < 1:
+        print("Invalid value for number of random files")
+        exit()
 
-    return args.csv, args.out
+    return args.csv, args.out, args.num
 
 
 def main():
-    input_csv, out_file = parse_args()
-    make_selection(input_csv, out_file)
+    input_csv, out_file, num = parse_args()
+    make_selection(input_csv, out_file, num)
 
 
 main()
