@@ -28,7 +28,12 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
         Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
     timeout_duration : str
         Duration before timeout when going to each website.
-
+    read_range : list
+        Contains two int which tell the programs to only take screenshots between these lines in the csv_in.
+    chrome_args : list
+        Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
+    screensize : list
+        Contains two int which are height and width of the browser viewport.
     """
 
     with open(csv_in_name, 'r') as csv_file_in:
@@ -135,11 +140,20 @@ def take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, t
         Duration before timeout when going to each website.
     screenshot_method : int
         Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
+    chrome_args : list
+        Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
+    screensize : list
+        Contains two int which are height and width of the browser viewport.
 
     Returns
     -------
-    str(succeed) : str
-        A code indicating whether how successful the screenshot was
+    site_status : str
+        LIVE if website can still be reached or is redirected.
+        FAIL if not.
+    site_message : str
+        An error describing why the site can't be reached or a message saying the site was redirected.
+    screenshot_message : str
+        Message indicating whether the screenshot was successful.
 
     """
 
@@ -153,8 +167,10 @@ def take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, t
         return site_status, site_message, cutycapt_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration)
     elif screenshot_method == 1:
         try:
-            asyncio.get_event_loop().run_until_complete(
-                puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, chrome_args, screensize))
+            loop = asyncio.get_event_loop()
+            task = asyncio.gather(puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, chrome_args, screensize))
+            result = loop.run_until_complete(task)
+            #logging.info(result)
             logging.info("Screenshot successful")
             print("Screenshot successful")
             return site_status, site_message, "Screenshot successful"
@@ -182,11 +198,14 @@ def take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, t
             print(e)
             logging.info(e)
             return site_status, site_message, e
-
-    return None, None, None  # assumes the user entered 0,1,2 as method
+        except:
+            print("Unknown error")
+            logging.info("Unknown error")
+            return site_status, site_message, "Unknown error"
 
 
 def chrome_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
+    # not fully implemented
     command = "timeout {4}s google-chrome --headless --hide-scrollbars --disable-gpu --noerrdialogs " \
               "--enable-fast-unload --screenshot={0}{1}.{2}.png --window-size=1024x768 '{3}'" \
         .format(pics_out_path, archive_id, url_id, url, timeout_duration)
@@ -206,6 +225,7 @@ def chrome_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
 
 
 def cutycapt_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
+    # not fully implemented
     command = "timeout {4}s xvfb-run --server-args=\"-screen 0, 1024x768x24\" cutycapt --url='{0}' " \
               "--out={1}{2}.{3}.png --delay=2000".format(url, pics_out_path, archive_id, url_id, timeout_duration)
     try:
@@ -239,6 +259,10 @@ async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_d
         Directory to output the screenshots.
     timeout_duration : str
         Duration before timeout when going to each website.
+    chrome_args : list
+        Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
+    screensize : list
+        Contains two int which are height and width of the browser viewport.
 
     References
     ----------
@@ -254,7 +278,7 @@ async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_d
         await page.setViewport({'height': screensize[0], 'width': screensize[1]})
         await page.goto(url, timeout=(timeout_duration * 1000))
         await page.waitFor(1000)
-        await page.reload(timeout=(int(timeout_duration) * 1000))    # reloading a site can get rid of certain popups
+        await page.reload(timeout=(timeout_duration * 1000))    # reloading a site can get rid of certain popups
 
         await click_button(page, "I Accept")        # click through popups and banners, there could be a lot more
         await click_button(page, "I Understand")
@@ -324,17 +348,19 @@ def check_site_availability(url):
 
     Returns
     -------
-    200 if the site is up and running
-    302 if it was a redirect
-    -7  for URL errors
-    ?   for HTTP errors
-    -8  for other error
+    site_status : str
+        LIVE if website can still be reached or is redirected.
+        FAIL if not.
+    site_message : str
+        An error describing why the site can't be reached or a message saying the site was redirected.
+
 
     References
     ----------
     .. [1] https://stackoverflow.com/questions/1726402/in-python-how-do-i-use-urllib-to-see-if-a-website-is-404-or-200
 
     """
+
     try:
         conn = urllib.request.urlopen(url)
     except urllib.error.HTTPError as e:
@@ -354,6 +380,11 @@ def check_site_availability(url):
         print(e)
         logging.info(e)
         return "FAIL", e
+    except:
+        # broad exception for anything else
+        print("Unknown error")
+        logging.info("Unknown error")
+        return "FAIL", "Unknown error"
 
     # check if redirected
     if conn.geturl() != url:
@@ -380,14 +411,16 @@ def parse_args():
         Directory to output the screenshots.
     screenshot_method : int
         Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
-    use_db : bool
-        Whether or not the input is a DB.
-    use_csv : bool
-        Whether or not the input is a CSV.
     make_csv : bool
         Whether or not to output a CSV when use_db is True.
     timeout_duration : str
         Duration before timeout when going to each website.
+    read_range : list
+        Contains two int which tell the programs to only take screenshots between these lines in the csv_in.
+    chrome_args : list
+        Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
+    screensize : list
+        Contains two int which are height and width of the browser viewport.
 
     """
 
@@ -483,7 +516,7 @@ def parse_args():
     return csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range, chrome_args, screensize
 
 def connect_sql(path):
-    """Connects the DB file. """
+    """Connects the DB file specified by path."""
 
     global connection, cursor
 
@@ -527,7 +560,6 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
 
     print("Taking screenshots")
-    # if use_csv:
     screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range, chrome_args, screensize)
     # if use_db:
     #     screenshot_db(csv_out_name, make_csv, pics_out_path, screenshot_method, timeout_duration)

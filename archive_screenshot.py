@@ -28,12 +28,14 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
         Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
     timeout_duration : str
         Duration before timeout when going to each website.
-    lazy : int
-        The max number of archive captures to take a screenshot of before moving on.
-    be_lazy : bool
-        Whether or not to take a maximum of screenshots per archive capture.
     banner : bool
-        Whether or not to remove the Archive-It banner
+        Whether or not to remove the Archive-It banner.
+    read_range : list
+        Contains two int which tell the programs to only take screenshots between these lines in the csv_in.
+    chrome_args : list
+        Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
+    screensize : list
+        Contains two int which are height and width of the browser viewport.
 
     """
 
@@ -64,15 +66,6 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
 
                 if url == "":
                     continue
-
-                # if be_lazy is True:  # makes running faster by not doing hundreds of archive sites
-                #     if url_id != compare:
-                #         count = 0
-                #         compare = url_id
-                #     else:
-                #         count += 1
-                #         if count > lazy:
-                #             continue
 
                 print("\nurl #{0} {1}".format(url_id, url))
                 logging.info("url #{0} {1}".format(url_id, url))
@@ -180,11 +173,20 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
         Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
     banner : bool
         Whether or not to remove the Archive-It banner
+    chrome_args : list
+        Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
+    screensize : list
+        Contains two int which are height and width of the browser viewport.
 
     Returns
     -------
-    str(succeed) : str
-        A code indicating whether how successful the screenshot was
+    site_status : str
+        LIVE if website can still be reached or is redirected.
+        FAIL if not.
+    site_message : str
+        An error describing why the site can't be reached or a message saying the site was redirected.
+    screenshot_message : str
+        Message indicating whether the screenshot was successful.
 
     """
 
@@ -199,8 +201,10 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
 
     elif screenshot_method == 1:
         try:
-            asyncio.get_event_loop().run_until_complete(
-                puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration, banner, chrome_args, screensize))
+            loop = asyncio.get_event_loop()
+            task = asyncio.gather(puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration, banner, chrome_args, screensize))
+            result = loop.run_until_complete(task)
+            #logging.info(result)
             logging.info("Screenshot successful")
             print("Screenshot successful")
             return site_status, site_message, "Screenshot successful"
@@ -228,8 +232,10 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
             print(e)
             logging.info(e)
             return site_status, site_message, e
-
-    return None, None, None  # assumes the user entered 0,1,2 as method
+        except:
+            print("Unknown error")
+            logging.info("Unknown error")
+            return site_status, site_message, "Unknown error"
 
 
 async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration, banner, chrome_args, screensize):
@@ -251,6 +257,10 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
         Duration before timeout when going to each website.
     banner : bool
         Whether or not to remove the Archive-It banner
+    chrome_args : list
+        Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
+    screensize : list
+        Contains two int which are height and width of the browser viewport.
 
     References
     ----------
@@ -286,6 +296,7 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
 
 
 def chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration):
+    # not fully implemented
     command = "timeout {5}s google-chrome --headless --hide-scrollbars --disable-gpu --noerrdialogs " \
               "--enable-fast-unload --screenshot={0}{1}.{2}.{3}.png --window-size=1024x768 '{4}'" \
         .format(pics_out_path, archive_id, url_id, date, url, timeout_duration)
@@ -304,6 +315,7 @@ def chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_dura
 
 
 def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration):
+    # not fully implemented
     command = "timeout {5}s xvfb-run --server-args=\"-screen 0, 1024x768x24\" " \
               "cutycapt --url='{0}' --out={1}{2}.{3}.{4}.png --delay=2000" \
         .format(url, pics_out_path, archive_id, url_id, date, timeout_duration)
@@ -324,18 +336,19 @@ def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_du
 
 
 async def remove_banner(page):
-    """Execute js script on page to click button
+    """Execute js script on page to click button. Works only on Archive-it.org banners
+    
+    Parameters
+    ----------
+    page : pyppeteer.page.Page
+        The page to go through
 
-        Parameters
-        ----------
-        page : pyppeteer.page.Page
-            The page to go through
+    References
+    ----------
+    .. [1] https://github.com/ukwa/webrender-puppeteer/blob/6fcc719d64dc19a4929c02d3a445a8283bee5195/renderer.js
 
-        References
-        ----------
-        .. [1] https://github.com/ukwa/webrender-puppeteer/blob/6fcc719d64dc19a4929c02d3a445a8283bee5195/renderer.js
+    """
 
-        """
     await page.evaluate('''query => {
       const elements = [...document.querySelectorAll('wb_div')];
       const targetElement = elements.find(e => e.style.display.includes(query));
@@ -353,16 +366,15 @@ def check_site_availability(url):
 
     Returns
     -------
-    200 if the site is up and running
-    302 if it was a redirect
-    -7  for URL errors
-    ?   for HTTP errors
-    -8  for other error
+    site_status : str
+        LIVE if website can still be reached or is redirected.
+        FAIL if not.
+    site_message : str
+        An error describing why the site can't be reached or a message saying the site was redirected.
 
     References
     ----------
     .. [1] https://stackoverflow.com/questions/1726402/in-python-how-do-i-use-urllib-to-see-if-a-website-is-404-or-200
-
 
     """
 
@@ -385,6 +397,11 @@ def check_site_availability(url):
         print(e)
         logging.info(e)
         return "FAIL", e
+    except:
+        # broad exception for anything else
+        print("Unknown error")
+        logging.info("Unknown error")
+        return "FAIL", "Unknown error"
 
     # check if redirected
     if conn.geturl() != url:
@@ -411,18 +428,14 @@ def parse_args():
         Directory to output the screenshots.
     screenshot_method : int
         Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
-    use_db : bool
-        Whether or not the input is a DB.
-    use_csv : bool
-        Whether or not the input is a CSV.
-    make_csv : bool
-        Whether or not to output a CSV when use_db is True.
     timeout_duration : str
         Duration before timeout when going to each website.
-    lazy : int
-        The max number of archive captures to take a screenshot of before moving on.
-    be_lazy : bool
-        Whether or not to take a maximum of screenshots per archive capture.
+    read_range : list
+        Contains two int which tell the programs to only take screenshots between these lines in the csv_in.
+    chrome_args : list
+        Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
+    screensize : list
+        Contains two int which are height and width of the browser viewport.
 
     """
 
@@ -529,7 +542,7 @@ def parse_args():
 
 
 def connect_sql(path):
-    """Connects the DB file. """
+    """Connects the DB file specified by path."""
 
     global connection, cursor
 
@@ -573,7 +586,6 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
 
     print("Taking screenshots")
-    # if use_csv:
     screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, banner, read_range, chrome_args, screensize)
     # if use_db:
     # screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy, banner)

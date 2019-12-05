@@ -79,11 +79,11 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv", type=str, help="The CSV file with the seed urls")
-    parser.add_argument("--db", type=str, help="The DB file to store the urls")
+    parser.add_argument("--db", type=str, help="(not implemented)The DB file to store the urls")
     parser.add_argument("--out", type=str, help="The CSV file to write the urls")
     parser.add_argument("--ext", type=str, help="ID of the archive")
     parser.add_argument("--name", type=str, help="Name of the archive")
-    parser.add_argument("--sort", action='store_true', help="(optional) Include to sort the output")
+    parser.add_argument("--sort", action='store_true', help="(optional) Include to sort the urls in the output")
 
     args = parser.parse_args()
 

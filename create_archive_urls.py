@@ -15,7 +15,7 @@ def create_with_db(make_csv, csv_out_name, remove_banner):
     csv_out_name : str
         The CSV file to write the archive urls.
     remove_banner : bool
-        Whether or not to generate urls that include Archive-It banner.
+        Whether or not to insert if_ to urls to remove the Archive-It banner.
 
     """
 
