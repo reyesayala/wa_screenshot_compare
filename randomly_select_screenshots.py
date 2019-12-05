@@ -3,7 +3,7 @@ import csv
 import argparse
 
 
-def make_selection(input_csv, out_csv, num):
+def make_selection(input_csv, out_csv, num, total):
     """Randomly select a number of archive screenshot for each current screenshot.
 
     Parameters
@@ -13,7 +13,10 @@ def make_selection(input_csv, out_csv, num):
     out_csv : str
         Path of the output CSV file which can be written to.
     num : int
-        The number of screenshots to choose for each ID
+        The number of screenshots to choose for each ID.
+    total : int
+        Total number of screenshots to choose.
+
     """
 
     print("File name: ", input_csv)
@@ -23,14 +26,16 @@ def make_selection(input_csv, out_csv, num):
 
         with open(input_csv, mode='r') as csv_file:
             csv_reader = csv.reader(csv_file)
-            line_count = 0
+            row_count = 0
             compare_name = ''
             holder = []
 
-            for row in csv_reader:
-                if line_count == 0:  # skip the first row in csv because it's the header
-                    line_count += 1
-                    continue
+            next(csv_reader)  # skip header
+            while True:
+                try:
+                    row = next(csv_reader)
+                except StopIteration:
+                    break
 
                 current_image_name = row[2]
 
@@ -40,6 +45,11 @@ def make_selection(input_csv, out_csv, num):
                         chosen_rows = random.sample(holder, min(num, len(holder)))
                         for chosen_row in chosen_rows:
                             csv_writer.writerow(chosen_row)
+                            row_count += 1
+                            if total is not None:
+                                if row_count >= total:
+                                    return
+
                         holder.clear()
                 holder.append(row)
 
@@ -60,6 +70,7 @@ def parse_args():
     parser.add_argument("--csv", type=str, help="The CSV file with screenshot file names")
     parser.add_argument("--out", type=str, help="The CSV file to write the newly selected file names")
     parser.add_argument("--num", type=int, help="Specify to choose a random number of screenshot per ID")
+    parser.add_argument("--total", type=int, help="Specify total number of screenshots.")
 
     args = parser.parse_args()
 
@@ -77,12 +88,12 @@ def parse_args():
         print("Invalid value for number of random files")
         exit()
 
-    return args.csv, args.out, args.num
+    return args.csv, args.out, args.num, args.total
 
 
 def main():
-    input_csv, out_file, num = parse_args()
-    make_selection(input_csv, out_file, num)
+    input_csv, out_file, num, total = parse_args()
+    make_selection(input_csv, out_file, num, total)
 
 
 main()
