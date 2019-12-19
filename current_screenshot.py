@@ -10,7 +10,7 @@ import re
 import signal
 
 
-def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, timeout_duration, read_range, chrome_args, screensize):
+def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, timeout_duration, read_range, chrome_args, screensize, keep_cookies):
     """Fetches urls from the input CSV and takes a screenshot
 
     Parameters
@@ -59,12 +59,12 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, timeout_duration, r
                 logging.info("url #{0} {1}".format(url_id, url))
 
                 site_status, site_message, screenshot_message = take_screenshot(archive_id, url_id, url,
-                    pics_out_path, timeout_duration, chrome_args, screensize)
+                    pics_out_path, timeout_duration, chrome_args, screensize, keep_cookies)
 
                 csv_writer.writerow([archive_id, url_id, url, site_status, site_message, screenshot_message])
 
 
-def take_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, chrome_args, screensize):
+def take_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, chrome_args, screensize, keep_cookies):
     """Calls the function or command to take a screenshot
 
     Parameters
@@ -103,8 +103,9 @@ def take_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, ch
         return site_status, site_message, "Screenshot unsuccessful"
 
     try:
+        signal.alarm(timeout_duration + 60)  # timer for when asyncio stalls on a invalid state error
         loop = asyncio.get_event_loop()
-        task = asyncio.gather(puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, chrome_args, screensize))
+        task = asyncio.gather(puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, chrome_args, screensize, keep_cookies))
         result = loop.run_until_complete(task)
         print("Screenshot successful")
         logging.info("Screenshot successful")
@@ -133,13 +134,17 @@ def take_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, ch
         print(e)
         logging.info(e)
         return site_status, site_message, e
+    except TimeoutError as e:
+        print(e)
+        logging.info(e)
+        return site_status, site_message, e
     except:
         print("Unknown error")
         logging.info("Unknown error")
         return site_status, site_message, "Unknown error"
 
 
-async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, chrome_args, screensize):
+async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_duration, chrome_args, screensize, keep_cookies):
     """Take screenshot using the pyppeteer package.
 
     Parameters
@@ -175,18 +180,19 @@ async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_d
         await page.waitFor(1000)
         await page.reload(timeout=(timeout_duration * 1000))    # reloading a site can get rid of certain popups
 
-        await click_button(page, "I Accept")        # click through popups and banners, there could be a lot more
-        await click_button(page, "I Understand")
-        await click_button(page, "I Agree")
-        await click_button(page, "Accept Recommended Settings")
-        await click_button(page, "Close")
-        await click_button(page, "Close and Accept")
-        await click_button(page, "OK")
-        await click_button(page, "OK, I Understand.")
-        await click_button(page, "Accept")
-        await click_button(page, "Accept Cookies")
-        await click_button(page, "No Thanks")
-        await page.keyboard.press("Escape")
+        if not keep_cookies:
+            await click_button(page, "I Accept")        # click through popups and banners, there could be a lot more
+            await click_button(page, "I Understand")
+            await click_button(page, "I Agree")
+            await click_button(page, "Accept Recommended Settings")
+            await click_button(page, "Close")
+            await click_button(page, "Close and Accept")
+            await click_button(page, "OK")
+            await click_button(page, "OK, I Understand.")
+            await click_button(page, "Accept")
+            await click_button(page, "Accept Cookies")
+            await click_button(page, "No Thanks")
+            await page.keyboard.press("Escape")
 
         await page.screenshot(path='{0}{1}.{2}.png'.format(pics_out_path, archive_id, url_id))
     except Exception as e:
@@ -310,6 +316,8 @@ def parse_args():
     parser.add_argument("--screen-size", type=str,
                         help="(optional) Specify to take screenshots of size, affects browser viewport too. "
                              "Syntax: height,width. ex 600,800. default size is 768,1024")
+    parser.add_argument("--keep-cookies", action='store_true',
+                        help="(optional) Include to NOT attempt to remove the cookies banners'")
 
     args = parser.parse_args()
 
@@ -327,6 +335,7 @@ def parse_args():
     pics_out_path = args.picsout + '/'
     csv_in_name = args.csv
     csv_out_name = args.indexcsv
+    keep_cookies = not args.keep_cookies
 
     timeout_duration = args.timeout
     if timeout_duration is None:
@@ -369,7 +378,7 @@ def parse_args():
             print("Invalid format for screensize")
             exit()
 
-    return csv_in_name, csv_out_name, pics_out_path, timeout_duration, read_range, chrome_args, screensize
+    return csv_in_name, csv_out_name, pics_out_path, timeout_duration, read_range, chrome_args, screensize, keep_cookies
 
 
 def set_up_logging(pics_out_path):
@@ -396,17 +405,24 @@ def set_up_logging(pics_out_path):
                         datefmt='%d-%b-%y %H:%M:%S %p', level=logging.INFO)
 
 
-def signal_handler(sig, frame):
+def signal_handler_sigint(sig, frame):
+    # sigint handler for debugging
     raise Exception("User interrupted")
 
 
+def signal_handler_sigalrm(sig, frame):
+    # sigalrm handler for a rare asyncio invalid state error
+    raise TimeoutError("Timeout Error")
+
+
 def main():
-    csv_in_name, csv_out_name, pics_out_path, timeout_duration, read_range, chrome_args, screensize = parse_args()
+    csv_in_name, csv_out_name, pics_out_path, timeout_duration, read_range, chrome_args, screensize, keep_cookies = parse_args()
     set_up_logging(pics_out_path)
-    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler_sigint)
+    signal.signal(signal.SIGINT, signal_handler_sigalrm)
 
     print("Taking screenshots")
-    screenshot_csv(csv_in_name, csv_out_name, pics_out_path, timeout_duration, read_range, chrome_args, screensize)
+    screenshot_csv(csv_in_name, csv_out_name, pics_out_path, timeout_duration, read_range, chrome_args, screensize, keep_cookies)
 
 
 main()
