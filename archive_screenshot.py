@@ -13,7 +13,8 @@ import signal
 import re
 
 
-def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, banner, read_range, chrome_args, screensize):
+def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, banner, read_range,
+                   chrome_args, screensize, keep_cookies):
     """Fetches urls from the input CSV and takes a screenshot
 
     Parameters
@@ -71,7 +72,7 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
                 logging.info("url #{0} {1}".format(url_id, url))
 
                 site_status, site_message, screenshot_message = take_screenshot(archive_id, url_id, date, url,
-                    pics_out_path, screenshot_method, timeout_duration, banner, chrome_args, screensize)
+                    pics_out_path, screenshot_method, timeout_duration, banner, chrome_args, screensize, keep_cookies)
 
                 csv_writer.writerow([archive_id, url_id, date, url, site_status, site_message, screenshot_message])
 
@@ -152,7 +153,8 @@ def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, time
         csv_file_out.close()
 
 
-def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_method, timeout_duration, banner, chrome_args, screensize):
+def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_method, timeout_duration, banner,
+                    chrome_args, screensize, keep_cookies):
     """Calls the function or command to take a screenshot
 
     Parameters
@@ -201,8 +203,10 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
 
     elif screenshot_method == 1:
         try:
+            signal.alarm(timeout_duration * 2 + 60)  # timer for when asyncio stalls on a invalid state error
             loop = asyncio.get_event_loop()
-            task = asyncio.gather(puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration, banner, chrome_args, screensize))
+            task = asyncio.gather(puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration,
+                                                       banner, chrome_args, screensize, keep_cookies))
             result = loop.run_until_complete(task)
             #logging.info(result)
             logging.info("Screenshot successful")
@@ -232,13 +236,18 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
             print(e)
             logging.info(e)
             return site_status, site_message, e
+        except TimeoutError as e:
+            print(e)
+            logging.info(e)
+            return site_status, site_message, e
         except:
             print("Unknown error")
             logging.info("Unknown error")
             return site_status, site_message, "Unknown error"
 
 
-async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration, banner, chrome_args, screensize):
+async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration, banner, chrome_args,
+                               screensize, keep_cookies):
     """Take screenshot using the pyppeteer package.
 
     Parameters
@@ -273,6 +282,20 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
     try:
         await page.setViewport({'height': screensize[0], 'width': screensize[1]})
         await page.goto(url, timeout=(timeout_duration * 1000))
+
+        if not keep_cookies:
+            await click_button(page, "I Accept")        # click through popups and banners, there could be a lot more
+            await click_button(page, "I Understand")
+            await click_button(page, "I Agree")
+            await click_button(page, "Accept Recommended Settings")
+            await click_button(page, "Close")
+            await click_button(page, "Close and Accept")
+            await click_button(page, "OK")
+            await click_button(page, "OK, I Understand.")
+            await click_button(page, "Accept")
+            await click_button(page, "Accept Cookies")
+            await click_button(page, "No Thanks")
+            await page.keyboard.press("Escape")
 
         if not banner:
             await remove_banner(page)        # edit css of page to remove archive-it banner
@@ -333,6 +356,33 @@ def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_du
         logging.info("Screenshot unsuccessful")
         print("Screenshot unsuccessful")
         return "Screenshot unsuccessful"
+
+
+async def click_button(page, button_text):
+    """Execute js script on page to click button
+
+    Parameters
+    ----------
+    page : pyppeteer.page.Page
+        The page to go through
+    button_text: str
+        Name of the button to click
+
+    References
+    ----------
+    .. [1] https://github.com/ukwa/webrender-puppeteer/blob/6fcc719d64dc19a4929c02d3a445a8283bee5195/renderer.js
+
+    Notes
+    -----
+    Right now only clicks popups and banners that are buttons, but some sites have banners with using a or wb_divs
+
+
+    """
+    await page.evaluate('''query => {
+      const elements = [...document.querySelectorAll('button')];
+      const targetElement = elements.find(e => e.innerText.toLowerCase().includes(query));
+      targetElement && targetElement.click();
+      }''', button_text.lower())
 
 
 async def remove_banner(page):
@@ -462,6 +512,9 @@ def parse_args():
     parser.add_argument("--screen-size", type=str,
                         help="(optional) Specify to take screenshots of size, affects browser viewport too. "
                              "Syntax: height,width. ex 600,800. default size is 768,1024")
+    parser.add_argument("--keep-cookies", action='store_true',
+                        help="(optional) Include to NOT attempt to remove the cookies banners'")
+
     args = parser.parse_args()
 
     # some error checking
@@ -483,6 +536,7 @@ def parse_args():
     banner = args.banner
     csv_in_name = args.csv
     csv_out_name = args.indexcsv
+    keep_cookies = not args.keep_cookies
 
     # if args.db is not None:
     #     connect_sql(args.db)
@@ -538,7 +592,8 @@ def parse_args():
     #     be_lazy = False
     #     lazy = None
 
-    return csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, banner, read_range, chrome_args, screensize
+    return csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, banner, read_range, \
+           chrome_args, screensize, keep_cookies
 
 
 def connect_sql(path):
@@ -575,18 +630,26 @@ def set_up_logging(pics_out_path):
                         datefmt='%d-%b-%y %H:%M:%S %p', level=logging.INFO)
 
 
-def signal_handler(sig, frame):
+def signal_handler_sigint(sig, frame):
+    # sigint handler for debugging
     raise Exception("User interrupted")
+
+
+def signal_handler_sigalrm(sig, frame):
+    # sigalrm handler for a rare asyncio invalid state error
+    raise TimeoutError("Timeout Error")
 
 
 def main():
     csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, banner, read_range, \
-        chrome_args, screensize = parse_args()
+        chrome_args, screensize, keep_cookies = parse_args()
     set_up_logging(pics_out_path)
-    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler_sigint)
+    signal.signal(signal.SIGINT, signal_handler_sigalrm)
 
     print("Taking screenshots")
-    screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, banner, read_range, chrome_args, screensize)
+    screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, banner, read_range,
+                   chrome_args, screensize, keep_cookies)
     # if use_db:
     # screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy, banner)
 
