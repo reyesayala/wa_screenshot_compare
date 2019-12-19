@@ -37,7 +37,9 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
         Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
     screensize : list
         Contains two int which are height and width of the browser viewport.
-
+    keep_cookies : bool
+        Whether or not to run click_button() to attempt to remove cookies banners. False to remove.
+        
     """
 
     with open(csv_in_name, 'r') as csv_file_in:
@@ -179,7 +181,9 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
         Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
     screensize : list
         Contains two int which are height and width of the browser viewport.
-
+    keep_cookies : bool
+        Whether or not to run click_button() to attempt to remove cookies banners. False to remove.
+        
     Returns
     -------
     site_status : str
@@ -270,7 +274,9 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
         Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
     screensize : list
         Contains two int which are height and width of the browser viewport.
-
+    keep_cookies : bool
+        Whether or not to run click_button() to attempt to remove cookies banners. False to remove.
+        
     References
     ----------
     .. [1] https://pypi.org/project/pyppeteer/
@@ -486,7 +492,9 @@ def parse_args():
         Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
     screensize : list
         Contains two int which are height and width of the browser viewport.
-
+    keep_cookies : bool
+        Whether or not to run click_button() to attempt to remove cookies banners. False to remove.
+        
     """
 
     parser = argparse.ArgumentParser()
