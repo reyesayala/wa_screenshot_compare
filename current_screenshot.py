@@ -419,7 +419,7 @@ def main():
     csv_in_name, csv_out_name, pics_out_path, timeout_duration, read_range, chrome_args, screensize, keep_cookies = parse_args()
     set_up_logging(pics_out_path)
     signal.signal(signal.SIGINT, signal_handler_sigint)
-    signal.signal(signal.SIGINT, signal_handler_sigalrm)
+    signal.signal(signal.SIGALRM, signal_handler_sigalrm)
 
     print("Taking screenshots")
     screenshot_csv(csv_in_name, csv_out_name, pics_out_path, timeout_duration, read_range, chrome_args, screensize, keep_cookies)
