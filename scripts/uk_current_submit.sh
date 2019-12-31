@@ -9,16 +9,16 @@
 # NOTE if path of any variable contains a space, enclose it with double quotes
 
 # path to wa_screenshot_compare    ex. scripts_path=../../wa_screenshot_compare
-scripts_path=../wa_screenshot_compare
+scripts_path=            #../wa_screenshot_compare
 
 # path to where the seed is    ex. current_seed_path=../seeds/target-qa-dataset-oa-subset.csv
-current_seed_path=../../seeds/target-qa-dataset-oa-subset.csv
+current_seed_path=       #../../seeds/target-qa-dataset-oa-subset.csv
 
 # path to directory to store all the output files. the index folder and pics_current folder will be created here, and all the index files and screenshots will be generated in those folders
-working_directory=./
+working_directory=       #./
 
 # name of the archive, use double quotes to surround the name
-archive_name="UK archive"
+archive_name=            #"UK archive"
 
 # code below automatically creates the folders
 # NOTE files inside those folders may be overwritten
