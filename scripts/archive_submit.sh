@@ -10,17 +10,17 @@
 
 
 # REQUIRED path to wa_screenshot_compare    ex. scripts_path=../../wa_screenshot_compare
-scripts_path=../../wa_screenshot_compare
+scripts_path=             #../../wa_screenshot_compare
 
 # REQUIRED path to current_urls.csv generated from read_seed.py
-current_urls_path=index/current_urls.csv 
+current_urls_path=        #index/current_urls.csv 
 
 # REQUIRED path to directory that contains all the current screenshots, and path to current_index.csv. needed for calculate similarity
-pics_current_path=pics_current/
-current_index_path=index/current_index.csv
+pics_current_path=        #pics_current/
+current_index_path=       #index/current_index.csv
 
 # REQUIRED path to a directory to store all output. the index folder and the pics_archive_* folders will be created here, and the index files and screenshots will then be put into those folders
-working_directory=./
+working_directory=        #./
 
 # REQUIRED number of instances of archive_screenshot.py to be run at once, recommended 5
 num_instances=5
