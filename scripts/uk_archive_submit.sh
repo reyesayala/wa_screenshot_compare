@@ -9,17 +9,17 @@
 # NOTE if path of any variable contains a space, enclose it with double quotes  ex. working_directory="../Idle No More/"
 
 # REQUIRED path to wa_screenshot_compare    ex. scripts_path=../../wa_screenshot_compare
-scripts_path=../wa_screenshot_compare
+scripts_path=              #../wa_screenshot_compare
 
 # REQUIRED path to where the pre-generated archive urls.csv is    
-archive_url_path=../../seeds/archive_urls_webarchive_if_cleaned.csv
+archive_url_path=          #../../seeds/archive_urls_webarchive_if_cleaned.csv
 
 # REQUIRED path to directory that contains all the current screenshots, and path to current_index.csv. needed for calculate similarity
-pics_current_path=pics_current/
-current_index_path=index/current_index.csv
+pics_current_path=         #pics_current/
+current_index_path=        #index/current_index.csv
 
 # REQUIRED path to a directory to store all output. the index folder and the pics_archive_* folders will be created here, and the index files and screenshots will then be put into those folders
-working_directory=./
+working_directory=         #./
 
 # REQUIRED number of instances of archive_screenshot.py to be run at once, recommended 5                                                                                                      
 num_instances=5 
