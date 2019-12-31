@@ -6,22 +6,23 @@
 
 
 # fill in the variables with the values and paths respective to the path of this script
+# this is the bash script for the regular collections, make sure the path for wa_screenshot_compare is from the master branch.
 # NOTE if path of any variable contains a space, enclose it with double quotes
 
 # path to wa_screenshot_compare    ex. scripts_path=../../wa_screenshot_compare
-scripts_path=../../wa_screenshot_compare
+scripts_path=          #../../wa_screenshot_compare
 
 # path to where the seed is    ex. current_seed_path=../seed/target-qa-dataset-oa-subset.csv
-current_seed_path="../../seeds/Idle No More - seed-list.csv"
+current_seed_path=     #"../../seeds/Idle No More - seed-list.csv"
 
 # archive extension number
-extension=3490
+extension=             #3490
 
 # path to directory to store all the output files. the index folder and pics_current folder will be created here, and all the index files and screenshots will be generated in those folders
-working_directory=./
+working_directory=     #./
 
 # name of the archive, use double quotes to surround the name
-archive_name="Idle No More"
+archive_name=          #"Idle No More"
 
 # code below automatically creates the folders
 # NOTE files inside those folders may be overwritten
