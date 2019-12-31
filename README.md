@@ -60,7 +60,7 @@ This program takes the CSV with the current website URLS and takes screenshots. 
 
 Command syntax: 
 ```
-python3 current_screenshots.py --csv=current_urls.csv --picsout=current_pics/ --indexcsv=current_index.csv --method=1 --timeout=30 --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024
+python3 current_screenshots.py --csv=current_urls.csv --picsout=current_pics/ --indexcsv=current_index.csv --method=1 --timeout=30 --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024 --keep-cookies
 ```
 Arguments:
 * csv - Input CSV file with current URLs. 
@@ -71,6 +71,7 @@ Arguments:
 * range - (optional) Specify to take screenshots between these lines, inclusive. Syntax: low,high. ex. 0,1000. default takes screenshots of everything.
 * chrome-args - (optional) Additional arguments for pyppeteer chrome. ex. --args="--disable-gpu --no-sandbox".
 * screen-size - (optional) Specify to take screenshots of size, affects browser viewport too. Syntax: height,width. ex 600,800. default size is 768,1024.
+* keep-cookies  - (optional) Specify to NOT remove cookies banners. Dafault removes cookies banners.
 
 ### archive_screenshot.py
 This program takes the CSV with the archive website URLS and takes screenshots. The output CSV will have seven columns, archive ID, URL ID, capture date, URL, site status, site message, and screenshot message.
@@ -81,7 +82,7 @@ This program takes the CSV with the archive website URLS and takes screenshots. 
 
 Command syntax:
 ```
-python3 archive_screenshot.py --csv=archive_csv.csv  --picsout=archive_pics/ --indexcsv=archive_index.csv --method=1 --timeout=30 --banner --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024
+python3 archive_screenshot.py --csv=archive_csv.csv  --picsout=archive_pics/ --indexcsv=archive_index.csv --method=1 --timeout=30 --banner --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024 --keep-cookies
 ```
 Arguments:
 * csv - Input CSV file with archive URLs. 
@@ -93,6 +94,7 @@ Arguments:
 * range - (optional) Specify to take screenshots between these lines, inclusive. Syntax: low,high. ex. 0,1000. default takes screenshots of everything.
 * chrome-args - (optional) Additional arguments for pyppeteer chrome. ex. --args="--disable-gpu --no-sandbox".
 * screen-size - (optional) Specify to take screenshots of size, affects browser viewport too. Syntax: height,width. ex 600,800. default size is 768,1024.
+* keep-cookies  - (optional) Specify to NOT remove cookies banners. Dafault removes cookies banners.
 
 ### get_file_names.py
 This program outputs a CSV file which maps the current and archive URLs with their respective screenshots.
