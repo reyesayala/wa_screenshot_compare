@@ -47,6 +47,10 @@ def create_with_db(make_csv, csv_out_name, remove_banner):
                 if htmlclass[0] == "mainBody":
                     for htmla in htmltd.findAll('a'):
                         found_url = htmla.get('href')
+                        if(found_url.startswith("https://")):
+                            continue
+                        else:
+                            found_url="https:"+found_url                            
                         date = found_url.split('/')[4]
 
                         if remove_banner:       # add if_ into url if remove_banner is true
