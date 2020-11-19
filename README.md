@@ -60,7 +60,7 @@ This program takes the CSV with the current website URLS and takes screenshots. 
 
 Command syntax: 
 ```
-python3 current_screenshots.py --csv=current_urls.csv --picsout=current_pics/ --indexcsv=current_index.csv --method=1 --timeout=30 --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024 --keep-cookies
+python3 current_screenshot.py --csv=current_urls.csv --picsout=current_pics/ --indexcsv=current_index.csv --method=1 --timeout=30 --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024 --keep-cookies
 ```
 Arguments:
 * csv - Input CSV file with current URLs. 
