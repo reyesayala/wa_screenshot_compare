@@ -26,8 +26,7 @@ This program takes a CSV file with the seed website URLs and outputs it into ano
 
 Command syntax: 
 ```
-python3 read_seed.py --csv=your/directory/Collection-seed-list.csv --db=urls.db --out=current_urls.csv --ext=1234
---name="Collection Name" --sort
+python3 read_seed.py --csv=your/directory/Collection-seed-list.csv --db=urls.db --out=current_urls.csv --ext=1234 --name="Collection Name" --sort
 ```
 Arguments:
 * csv - The CSV file with the seed URLs. 
