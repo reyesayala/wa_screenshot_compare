@@ -26,8 +26,7 @@ This program takes a CSV file with the seed website URLs and outputs it into ano
 
 Command syntax: 
 ```
-python3 read_seed.py --csv=your/directory/Collection-seed-list.csv --db=urls.db --out=current_urls.csv --ext=1234
---name="Collection Name" --sort
+python3 read_seed.py --csv=your/directory/Collection-seed-list.csv --db=urls.db --out=current_urls.csv --ext=1234 --name="Collection Name" --sort
 ```
 Arguments:
 * csv - The CSV file with the seed URLs. 
@@ -43,7 +42,11 @@ This program takes the CSV from read_seed.py and gets the Archive-It archive URL
 
 Command syntax: 
 ```
-python3 create_archive_urls.py --csv=current_urls.csv --db=urls.db --out=archive_urls.csv --banner
+python3 create_archive_urls.py --csv=current_urls.csv --out=archive_urls.csv --banner
+```
+Or
+```
+python3 create_archive_urls.py --db=urls.db --out=archive_urls.csv --banner
 ```
 Arguments:
 * csv - Input CSV file with current URLs. 
@@ -82,7 +85,7 @@ This program takes the CSV with the archive website URLS and takes screenshots. 
 
 Command syntax:
 ```
-python3 archive_screenshot.py --csv=archive_csv.csv  --picsout=archive_pics/ --indexcsv=archive_index.csv --method=1 --timeout=30 --banner --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024 --keep-cookies
+python3 archive_screenshot.py --csv=archive_urls.csv  --picsout=archive_pics/ --indexcsv=archive_index.csv --method=1 --timeout=30 --banner --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024 --keep-cookies
 ```
 Arguments:
 * csv - Input CSV file with archive URLs. 
@@ -102,7 +105,11 @@ This program outputs a CSV file which maps the current and archive URLs with the
 
 Command syntax:
 ```
-python3 get_file_names.py --currcsv=current_index/ --archcsv=archive_index/ --db=urls.db --out=file_names.csv --print
+python3 get_file_names.py --currcsv=current_index.csv --archcsv=archive_index.csv --out=file_names.csv --print
+```
+Or
+```
+python3 get_file_names.py --db=urls.db --out=file_names.csv --print
 ```
 Arguments:
 * currcsv - The CSV file with the current screenshots index.
@@ -152,7 +159,7 @@ This program crops banners from website images. The user must supply the dimensi
 
 command syntax:
 ```
-python3 crop_banners_from_images.py --input_dir pics_archived_banners/ --output_dir pics_archived_no_banners/ --new_dimensions=0,43,1024,768
+python3 crop_banners_from_images.py --input_dir=pics_archived_banners/ --output_dir=pics_archived_no_banners/ --new_dimensions=0,43,1024,768
 ```
 Arguments:
 * input_dir - directory of screenshots with banners that need to be removed
