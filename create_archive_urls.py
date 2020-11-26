@@ -15,7 +15,7 @@ def create_with_db(make_csv, csv_out_name, remove_banner):
     csv_out_name : str
         The CSV file to write the archive urls.
     remove_banner : bool
-        Whether or not to insert if_ to urls to remove the Archive-It banner.
+        Whether or not to generate urls that include Archive-It banner.
 
     """
 
@@ -50,7 +50,8 @@ def create_with_db(make_csv, csv_out_name, remove_banner):
                         if(found_url.startswith("https://")):
                             continue
                         else:
-                            found_url="https:"+found_url                            
+                            found_url="https:"+found_url
+                            
                         date = found_url.split('/')[4]
 
                         if remove_banner:       # add if_ into url if remove_banner is true
@@ -122,6 +123,10 @@ def create_with_csv(csv_out_name, csv_in_name, remove_banner):
                         if htmlclass[0] == "mainBody":
                             for htmla in htmltd.findAll('a'):
                                 found_url = htmla.get('href')
+                                if(found_url.startswith("https://")):
+                                    continue
+                                else:
+                                    found_url="https:"+found_url
                                 date = found_url.split('/')[4]
 
                                 if remove_banner:       # add if_ into archive url if remove_banner is true
@@ -129,7 +134,6 @@ def create_with_csv(csv_out_name, csv_in_name, remove_banner):
                                     final_url = found_url[:index] + "if_" + found_url[index:]
                                 else:
                                     final_url = found_url
-
                                 csv_writer.writerow([archive_id, url_id, date, final_url])
 
                                 found = True
@@ -226,3 +230,5 @@ def main():
     
 
 main()
+
+
