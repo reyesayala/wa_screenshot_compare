@@ -37,7 +37,7 @@ Arguments:
 * name - Name of the archive.
 * sort - (optional) Include to sort the output.
 
-### create-archive_urls.py
+### create_archive_urls.py
 This program takes the CSV from read_seed.py and gets the Archive-It archive URL.  
 > The output CSV file will have three columns, archive ID, URL ID, and URL.
 
@@ -82,7 +82,7 @@ This program takes the CSV with the archive website URLS and takes screenshots. 
 
 Command syntax:
 ```
-python3 archive_screenshot.py --csv=archive_csv.csv  --picsout=archive_pics/ --indexcsv=archive_index.csv --method=1 --timeout=30 --banner --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024 --keep-cookies
+python3 archive_screenshot.py --csv=archive_urls.csv  --picsout=archive_pics/ --indexcsv=archive_index.csv --method=1 --timeout=30 --banner --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024 --keep-cookies
 ```
 Arguments:
 * csv - Input CSV file with archive URLs. 
@@ -102,7 +102,7 @@ This program outputs a CSV file which maps the current and archive URLs with the
 
 Command syntax:
 ```
-python3 get_file_names.py --currcsv=current_index/ --archcsv=archive_index/ --db=urls.db --out=file_names.csv --print
+python3 get_file_names.py --currcsv=current_index.csv --archcsv=archive_index.csv --db=urls.db --out=file_names.csv --print
 ```
 Arguments:
 * currcsv - The CSV file with the current screenshots index.
