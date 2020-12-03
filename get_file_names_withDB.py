@@ -2,6 +2,49 @@ import sqlite3
 import argparse
 import csv
 
+
+def open_with_db(csv_out_name, do_print):
+    """Gets the url and file names using a sql query and writing it to CSV
+
+    Parameters
+    ----------
+    csv_out_name : str
+        The CSV file to write the urls and file names.
+    do_print : bool
+        Whether or not to print the results to stdout.
+
+    """
+
+    cursor.execute("select urln.urln, urla.url, inda.archiveID, inda.urlID, inda.date, inda.succeed, indn.succeed;")
+                   "from current_index indn, archive_index inda, current_urls urln, archive_urls urla " +
+                   "where indn.archiveID = inda.archiveID " +
+                   "and indn.archiveID = urln.archiveID " +
+                   "and indn.archiveID = urla.archiveID " +
+                   "and indn.urlID = inda.urlID " +
+                   "and indn.urlID = urln.urlID " +
+                   "and indn.urlID = urla.urlID " +
+                   "and (indn.succeed = 200 or inda.succeed = 200) " +
+                   "and (indn.succeed = 302 or inda.succeed = 302)" +
+                   ";")
+
+    fetchall = cursor.fetchall()
+
+    with open(csv_out_name, 'w+') as csv_file_out:
+        csv_writer = csv.writer(csv_file_out, delimiter=',', quoting=csv.QUOTE_ALL)
+        csv_writer.writerow(["current_url", "archive_url", "current_file_name", "archive_file_name"])
+        
+        for row in fetchall:
+            [current_url, archive_url, archive_id, url_id, date] = row
+            current_filename = "{0}.{1}.png".format(archive_id, url_id)
+            archive_filename = "{0}.{1}.{2}.png".format(archive_id, url_id, date)
+            csv_writer.writerow([current_url, archive_url, current_filename, archive_filename])
+
+            if do_print:
+                print("{0}|{1}|{2}|{3}".format(current_url, archive_url, current_filename, archive_filename))
+
+    connection.close()
+
+
 def open_with_csv(curr_csv_name, arch_csv_name, csv_out_name, do_print):
     """Parses both index files line by line and writes the urls and file names to the output file.
 
@@ -61,6 +104,17 @@ def open_with_csv(curr_csv_name, arch_csv_name, csv_out_name, do_print):
                 except StopIteration:
                     pass
 
+
+def connect_sql(path):
+    """Connects the DB file. """
+
+    global connection, cursor
+
+    connection = sqlite3.connect(path)
+    cursor = connection.cursor()
+    connection.commit()
+
+
 def parse_args():
     """Parses the command line arguments
 
@@ -68,6 +122,8 @@ def parse_args():
     -------
     use_csv : bool
         Whether or not the input is a CSV.
+    use_db : bool
+        Whether or not the input is a DB.
     curr_csv_name : str
         The CSV file with the current screenshot index.
     arch_csv_name : str
@@ -84,6 +140,7 @@ def parse_args():
     # initializing every line switch
     parser.add_argument("--currcsv", type=str, help="The CSV file with the current screenshots index")
     parser.add_argument("--archcsv", type=str, help="The CSV file with the archive screenshots index")
+    parser.add_argument("--db", type=str, help="Input DB file with urls")
     parser.add_argument("--out", type=str, help="The CSV file to write the urls and file names")
     parser.add_argument("--print", action='store_true',
                         help="(optional) Include to print urls and file names to stdout, default doesn't print")
@@ -91,30 +148,46 @@ def parse_args():
     args = parser.parse_args()
 
     # some parameters checking
-    if args.currcsv is None and args.archcsv is None:
+    if args.currcsv is None and args.archcsv is None and args.db is None:
         print("Must provide input file\n")
         exit()
-    if args.currcsv is None:
-        print("Must provide input CSV file with the current screenshot index.\n")
+    if args.db is not None and not (args.currcsv is None and args.archcsv is None):
+        print("Must only use only one type of input file\n")
         exit()
-    if args.archcsv is None:
-        print("Must provide input CSV file with the archive screenshots index.\n")
+    if args.db is None and (args.currcsv is None or args.archcsv is None):
+        print("Must provide both current and archive index CSV files\n")
         exit()
     if args.out is None:
         print("Must specify output file\n")
         exit()
-    
-    curr_csv_name = args.currcsv
-    arch_csv_name = args.archcsv
+
+    if args.currcsv is not None and args.archcsv is not None:
+        use_csv = True
+        curr_csv_name = args.currcsv
+        arch_csv_name = args.archcsv
+    else:
+        use_csv = False
+        curr_csv_name = None;
+        arch_csv_name = None;
+
+    if args.db is not None:
+        use_db = True
+        connect_sql(args.db)
+    else:
+        use_db = False
 
     csv_out_name = args.out
     do_print = args.print
 
-    return curr_csv_name, arch_csv_name, do_print, csv_out_name
+    return use_csv, use_db, curr_csv_name, arch_csv_name, do_print, csv_out_name
 
 
 def main():
-    curr_csv_name, arch_csv_name, do_print, csv_out_name = parse_args()
-    open_with_csv(curr_csv_name, arch_csv_name, csv_out_name, do_print)
+    use_csv, use_db, curr_csv_name, arch_csv_name, do_print, csv_out_name = parse_args()
+    if use_csv:
+        open_with_csv(curr_csv_name, arch_csv_name, csv_out_name, do_print)
+    if use_db:
+        open_with_db(csv_out_name, do_print)
+
 
 main()
