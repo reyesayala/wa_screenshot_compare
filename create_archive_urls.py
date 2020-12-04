@@ -163,6 +163,7 @@ def parse_args():
 
     """
 
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--db", type=str, help="Input DB file with urls, output is automatically inserted in db")
     parser.add_argument("--csv", type=str, help="Input CSV file with current urls")
@@ -182,6 +183,9 @@ def parse_args():
     if args.csv is not None and args.out is None:
         print("Must specify output location\n")
         exit()
+    if args.out is None:
+        print("Must specify output file\n")
+        exit()
         
     if args.db is not None:
         use_db = True
@@ -194,12 +198,14 @@ def parse_args():
         csv_in_name = args.csv
     else:
         use_csv = False
+        csv_in_name = None;
 
     if args.out is not None:
         csv_out_name = args.out
         make_csv = True
     else:
         make_csv = False
+        csv_out_name = None;
 
     remove_banner = not args.banner
 

@@ -485,6 +485,10 @@ def parse_args():
     csv_out_name = args.indexcsv
     keep_cookies = not args.keep_cookies
 
+
+    if not os.path.exists(pics_out_path):
+        os.makedirs(pics_out_path)
+
     # if args.db is not None:
     #     connect_sql(args.db)
     #     use_db = True
