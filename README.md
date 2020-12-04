@@ -85,7 +85,7 @@ This program takes the CSV with the archive website URLS and takes screenshots. 
 
 Command syntax:
 ```
-python3 archive_screenshot.py --csv=archive_urls.csv  --picsout=archive_pics/ --indexcsv=archive_index.csv --method=1 --timeout=30 --banner --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024 --keep-cookies
+python3 archive_screenshot.py --csv=archive_urls.csv  --picsout=archive_pics/ --indexcsv=archive_index.csv --method=1 --timeout=30 --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024 --keep-cookies
 ```
 Arguments:
 * csv - Input CSV file with archive URLs. 
@@ -93,7 +93,6 @@ Arguments:
 * indexcsv - The CSV file to write the index.
 * method - Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
 * timeout - (optional) Specify duration before timeout for each site, in seconds, default 30 seconds.
-* banner - (optional) Include to keep banner, default removes banner.
 * range - (optional) Specify to take screenshots between these lines, inclusive. Syntax: low,high. ex. 0,1000. default takes screenshots of everything.
 * chrome-args - (optional) Additional arguments for pyppeteer chrome. ex. --args="--disable-gpu --no-sandbox".
 * screen-size - (optional) Specify to take screenshots of size, affects browser viewport too. Syntax: height,width. ex 600,800. default size is 768,1024.
