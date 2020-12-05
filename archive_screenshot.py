@@ -11,9 +11,11 @@ from pyppeteer import errors
 import logging
 import signal
 import re
+import sys
+from PIL import Image
 
 
-def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range,
+def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, banner, read_range,
                    chrome_args, screensize, keep_cookies):
     """Fetches urls from the input CSV and takes a screenshot
 
@@ -29,6 +31,8 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
         Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
     timeout_duration : str
         Duration before timeout when going to each website.
+    banner : bool
+        Whether or not to remove the Archive-It banner.
     read_range : list
         Contains two int which tell the programs to only take screenshots between these lines in the csv_in.
     chrome_args : list
@@ -72,12 +76,12 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
                 logging.info("url #{0} {1}".format(url_id, url))
 
                 site_status, site_message, screenshot_message = take_screenshot(archive_id, url_id, date, url,
-                    pics_out_path, screenshot_method, timeout_duration, chrome_args, screensize, keep_cookies)
+                    pics_out_path, screenshot_method, timeout_duration, banner, chrome_args, screensize, keep_cookies)
 
                 csv_writer.writerow([archive_id, url_id, date, url, site_status, site_message, screenshot_message])
 
 
-def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy):
+def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy, banner):
     """Fetches urls from the input DB and takes a screenshot
 
     Parameters
@@ -96,6 +100,8 @@ def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, time
         The max number of archive captures to take a screenshot of before moving on.
     be_lazy : bool
         Whether or not to take a maximum of screenshots per archive capture.
+    banner : bool
+        Whether or not to remove the Archive-It banner
 
    """
 
@@ -136,7 +142,7 @@ def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, time
         logging.info("url #{0} {1}".format(url_id, url))
 
         succeed = take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_method,
-                                  timeout_duration)
+                                  timeout_duration, banner)
 
         cursor.execute("insert into archive_index values ({0}, {1}, '{2}', {3});"
                        .format(archive_id, url_id, date, succeed))
@@ -151,7 +157,7 @@ def screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, time
         csv_file_out.close()
 
 
-def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_method, timeout_duration,
+def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_method, timeout_duration, banner,
                     chrome_args, screensize, keep_cookies):
     """Calls the function or command to take a screenshot
 
@@ -171,6 +177,8 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
         Duration before timeout when going to each website.
     screenshot_method : int
         Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
+    banner : bool
+        Whether or not to remove the Archive-It banner
     chrome_args : list
         Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
     screensize : list
@@ -204,7 +212,7 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
             signal.alarm(timeout_duration * 2 + 60)  # timer for when asyncio stalls on a invalid state error
             loop = asyncio.get_event_loop()
             task = asyncio.gather(puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration,
-                                                       chrome_args, screensize, keep_cookies))
+                                                       banner, chrome_args, screensize, keep_cookies))
             result = loop.run_until_complete(task)
             #logging.info(result)
             logging.info("Screenshot successful")
@@ -244,7 +252,7 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
             return site_status, site_message, "Unknown error"
 
 
-async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration, chrome_args,
+async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, timeout_duration, banner, chrome_args,
                                screensize, keep_cookies):
     """Take screenshot using the pyppeteer package.
 
@@ -262,6 +270,8 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
         Directory to output the screenshots.
     timeout_duration : str
         Duration before timeout when going to each website.
+    banner : bool
+        Whether or not to remove the Archive-It banner
     chrome_args : list
         Contains extra arguments for chrome that can be passed into pyppeteer. None if no additional arguments.
     screensize : list
@@ -294,6 +304,9 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
             await click_button(page, "Accept Cookies")
             await click_button(page, "No Thanks")
             await page.keyboard.press("Escape")
+
+        if not banner:
+            await remove_banner(page)        # edit css of page to remove archive-it banner
 
         await page.screenshot(path='{0}{1}.{2}.{3}.png'.format(pics_out_path, archive_id, url_id, date))
 
@@ -334,14 +347,21 @@ def chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_dura
 
 def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration):
     # not fully implemented
+    box = (0, 0, 1024, 768)
     command = "timeout {5}s xvfb-run --server-args=\"-screen 0, 1024x768x24\" " \
-              "cutycapt --url='{0}' --out={1}{2}.{3}.{4}.png --delay=2000" \
+              "/usr/bin/cutycapt --url='{0}' --out={1}{2}.{3}.{4}.jpg --delay=2000" \
         .format(url, pics_out_path, archive_id, url_id, date, timeout_duration)
     try:
         time.sleep(1)  # cutycapt needs to rest
         if os.system(command) == 0:
             logging.info("Screenshot successful")
             print("Screenshot successful")
+            print("Cropping image")
+            filename = archive_id+"."+url_id+"."+date+".jpg"
+            print(filename)
+            im =    Image.open(pics_out_path+filename)
+            cropped_image = im.crop(box)
+            cropped_image.save(pics_out_path+filename)
             return "Screenshot successful"
         else:
             logging.info("Screenshot unsuccessful")
@@ -351,6 +371,10 @@ def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_du
         logging.info("Screenshot unsuccessful")
         print("Screenshot unsuccessful")
         return "Screenshot unsuccessful"
+#cutycapt automatically takes a screenshot of the entire website, so the images need to be cropped
+
+
+
 
 
 async def click_button(page, button_text):
@@ -378,6 +402,27 @@ async def click_button(page, button_text):
       const targetElement = elements.find(e => e.innerText.toLowerCase().includes(query));
       targetElement && targetElement.click();
       }''', button_text.lower())
+
+
+async def remove_banner(page):
+    """Execute js script on page to click button. Works only on Archive-it.org banners
+    
+    Parameters
+    ----------
+    page : pyppeteer.page.Page
+        The page to go through
+
+    References
+    ----------
+    .. [1] https://github.com/ukwa/webrender-puppeteer/blob/6fcc719d64dc19a4929c02d3a445a8283bee5195/renderer.js
+
+    """
+
+    await page.evaluate('''query => {
+      const elements = [...document.querySelectorAll('wb_div')];
+      const targetElement = elements.find(e => e.style.display.includes(query));
+      targetElement.style.display = "none";
+      }''', "block")
 
 
 def check_site_availability(url):
@@ -477,6 +522,8 @@ def parse_args():
                         help="Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt")
     parser.add_argument("--timeout", type=str,
                         help="(optional) Specify duration before timeout, in seconds, default 30 seconds")
+    parser.add_argument("--banner", action='store_true',
+                        help="(optional) Include to keep banner, default removes banner")
     parser.add_argument("--range", type=str,
                         help="(optional) Specify to take screenshots between these lines, inclusive. "
                              "Syntax: low,high. ex. 0,1000. default takes screenshots of everything.")
@@ -507,6 +554,7 @@ def parse_args():
 
     pics_out_path = args.picsout + '/'
     screenshot_method = int(args.method)
+    banner = args.banner
     csv_in_name = args.csv
     csv_out_name = args.indexcsv
     keep_cookies = not args.keep_cookies
@@ -565,7 +613,7 @@ def parse_args():
     #     be_lazy = False
     #     lazy = None
 
-    return csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range, \
+    return csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, banner, read_range, \
            chrome_args, screensize, keep_cookies
 
 
@@ -614,17 +662,17 @@ def signal_handler_sigalrm(sig, frame):
 
 
 def main():
-    csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range, \
+    csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, banner, read_range, \
         chrome_args, screensize, keep_cookies = parse_args()
     set_up_logging(pics_out_path)
     signal.signal(signal.SIGINT, signal_handler_sigint)
     signal.signal(signal.SIGALRM, signal_handler_sigalrm)
 
     print("Taking screenshots")
-    screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range,
+    screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, banner, read_range,
                    chrome_args, screensize, keep_cookies)
     # if use_db:
-    # screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy)
+    # screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy, banner)
 
 
 if __name__ == "__main__":
