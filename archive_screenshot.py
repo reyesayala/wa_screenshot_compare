@@ -11,6 +11,8 @@ from pyppeteer import errors
 import logging
 import signal
 import re
+import sys
+from PIL import Image
 
 
 def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range,
@@ -334,14 +336,21 @@ def chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_dura
 
 def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration):
     # not fully implemented
+    box = (0, 0, 1024, 768)
     command = "timeout {5}s xvfb-run --server-args=\"-screen 0, 1024x768x24\" " \
-              "cutycapt --url='{0}' --out={1}{2}.{3}.{4}.png --delay=2000" \
+              "/usr/bin/cutycapt --url='{0}' --out={1}{2}.{3}.{4}.jpg --delay=2000" \
         .format(url, pics_out_path, archive_id, url_id, date, timeout_duration)
     try:
         time.sleep(1)  # cutycapt needs to rest
         if os.system(command) == 0:
             logging.info("Screenshot successful")
             print("Screenshot successful")
+            print("Cropping image")
+            filename = archive_id+"."+url_id+"."+date+".jpg"
+            print(filename)
+            im =    Image.open(pics_out_path+filename)
+            cropped_image = im.crop(box)
+            cropped_image.save(pics_out_path+filename)
             return "Screenshot successful"
         else:
             logging.info("Screenshot unsuccessful")
@@ -351,6 +360,10 @@ def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_du
         logging.info("Screenshot unsuccessful")
         print("Screenshot unsuccessful")
         return "Screenshot unsuccessful"
+#cutycapt automatically takes a screenshot of the entire website, so the images need to be cropped
+
+
+
 
 
 async def click_button(page, button_text):
@@ -378,6 +391,7 @@ async def click_button(page, button_text):
       const targetElement = elements.find(e => e.innerText.toLowerCase().includes(query));
       targetElement && targetElement.click();
       }''', button_text.lower())
+
 
 
 def check_site_availability(url):
