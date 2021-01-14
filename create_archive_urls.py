@@ -1,3 +1,4 @@
+
 import argparse
 import sqlite3
 import csv
@@ -113,6 +114,7 @@ def create_with_csv(csv_out_name, csv_in_name, remove_banner):
                 archive_url = "https://wayback.archive-it.org/{0}/*/{1}".format(archive_id, url)
 
                 print("url #" + url_id)
+                print("url #" + archive_url)
 
                 found = False  # next 15 lines just goes through the html to find the urls
                 page = requests.get(archive_url)
@@ -227,14 +229,16 @@ def connect_sql(path):
     
 
 def main():
-    use_db, use_csv, make_csv, csv_out_name, csv_in_name, remove_banner = parse_args()
+
+    import read_config_file
+    import config
+
     print("Getting archive urls...")
-    if use_csv:
-        create_with_csv(csv_out_name, csv_in_name, remove_banner)
-    if use_db:
-        create_with_db(make_csv, csv_out_name, remove_banner)
-    
+    create_with_csv(config.archive_urls_csv, config.current_urls_csv, config.banner)
+    print("File ", config.archive_urls_csv, "with the archived urls has been created")
 
 main()
+
+
 
 
