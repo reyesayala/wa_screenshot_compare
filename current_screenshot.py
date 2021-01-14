@@ -13,6 +13,7 @@ import signal
 import re
 
 
+
 def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range,
                    chrome_args, screensize, keep_cookies):
     """Fetches urls from the input CSV and takes a screenshot
@@ -218,7 +219,7 @@ def take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, t
 def chrome_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
     # not fully implemented
     command = "timeout {4}s google-chrome --headless --hide-scrollbars --disable-gpu --noerrdialogs " \
-              "--enable-fast-unload --screenshot={0}{1}.{2}.png --window-size=1024x768 '{3}'" \
+              "--enable-fast-unload --screenshot={0}{1}.{2}.jpg --window-size=1024x768 '{3}'" \
         .format(pics_out_path, archive_id, url_id, url, timeout_duration)
     try:
         if os.system(command) == 0:
@@ -238,7 +239,7 @@ def chrome_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
 def cutycapt_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
     # not fully implemented
     command = "timeout {4}s xvfb-run --server-args=\"-screen 0, 1024x768x24\" cutycapt --url='{0}' " \
-              "--out={1}{2}.{3}.png --delay=2000".format(url, pics_out_path, archive_id, url_id, timeout_duration)
+              "--out={1}{2}.{3}.jpg --delay=2000".format(url, pics_out_path, archive_id, url_id, timeout_duration)
     try:
         time.sleep(1)  # cutycapt needs to rest
         if os.system(command) == 0:
@@ -307,7 +308,7 @@ async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_d
             await click_button(page, "No Thanks")
             await page.keyboard.press("Escape")
 
-        await page.screenshot(path='{0}{1}.{2}.png'.format(pics_out_path, archive_id, url_id))
+        await page.screenshot(path='{0}{1}.{2}.jpg'.format(pics_out_path, archive_id, url_id))
 
     except Exception as e:
         # https://github.com/GoogleChrome/puppeteer/issues/2269
@@ -584,17 +585,22 @@ def signal_handler_sigalrm(sig, frame):
 
 
 def main():
-    csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range, chrome_args, screensize,\
-            keep_cookies = parse_args()
-    set_up_logging(pics_out_path)
+
+
     signal.signal(signal.SIGINT, signal_handler_sigint)
     signal.signal(signal.SIGALRM, signal_handler_sigalrm)
 
+    import read_config_file
+    import config
+
     print("Taking screenshots")
-    screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range,
-                   chrome_args, screensize, keep_cookies)
-    # if use_db:
-    #     screenshot_db(csv_out_name, make_csv, pics_out_path, screenshot_method, timeout_duration)
+    #create_with_csv(config.archive_urls_csv, config.current_urls_csv, config.banner)
+    set_up_logging(config.current_pics_dir)
+    print(config.c_screen_width)
+    screenshot_csv(config.current_urls_csv, config.current_index_csv, config.current_pics_dir, config.c_method, config.c_timeout, [config.c_range_min, config.c_range_max], config.c_chrome_args, [config.c_screen_height, config.c_screen_width], config.c_keep_cookies)
+    
+    print("The current screenshots have been created in this directory: ", config.current_pics_dir)
 
 
 main()
+
