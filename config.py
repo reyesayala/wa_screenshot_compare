@@ -44,7 +44,7 @@ def load_config():
     globals()['current_pics_dir'] = config.get(sect, 'current_pics_dir')
     globals()['c_method'] = config.getint(sect, 'method')
     globals()['c_screen_height'] = config.getint(sect, 'c_screen_height')
-    globals()['c_screen width'] = config.getint(sect, 'c_screen width')
+    globals()['c_screen width'] = config.getint(sect, 'c_screen_width')
     globals()['c_timeout'] = config.getint(sect, 'c_timeout')
     globals()['c_keep_cookies'] = config.get(sect, 'c_keep_cookies')
     globals()['c_chrome_args'] = config.get(sect, 'c_chrome_args')
