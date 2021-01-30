@@ -282,6 +282,8 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
     try:
         await page.setViewport({'height': screensize[0], 'width': screensize[1]})
         await page.goto(url, timeout=(timeout_duration * 1000))
+        await page.waitFor(1000)
+        await page.reload(timeout=(timeout_duration * 1000))    # reloading a site can get rid of certain popups
 
         if not keep_cookies:
             await click_button(page, "I Accept")        # click through popups and banners, there could be a lot more
@@ -297,7 +299,7 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
             await click_button(page, "No Thanks")
             await page.keyboard.press("Escape")
 
-        await page.screenshot(path='{0}{1}.{2}.{3}.png'.format(pics_out_path, archive_id, url_id, date))
+        await page.screenshot(path='{0}{1}.{2}.{3}.jpg'.format(pics_out_path, archive_id, url_id, date))
 
     except Exception as e:
         # https://github.com/GoogleChrome/puppeteer/issues/2269
@@ -318,7 +320,7 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
 def chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration):
     # not fully implemented
     command = "timeout {5}s google-chrome --headless --hide-scrollbars --disable-gpu --noerrdialogs " \
-              "--enable-fast-unload --screenshot={0}{1}.{2}.{3}.png --window-size=1024x768 '{4}'" \
+              "--enable-fast-unload --screenshot={0}{1}.{2}.{3}.jpg --window-size=1024x768 '{4}'" \
         .format(pics_out_path, archive_id, url_id, date, url, timeout_duration)
     try:
         if os.system(command) == 0:
@@ -420,36 +422,64 @@ def check_site_availability(url):
         conn = urllib.request.urlopen(url)
     except urllib.error.HTTPError as e:
         # Return code error (e.g. 404, 501, ...)
-        error_message = 'HTTPError: {}'.format(e.code)
-        print(error_message)
-        logging.info(error_message)
-        return "FAIL", error_message
+        try:
+            conn.close()
+            error_message = 'HTTPError: {}'.format(e.code)
+            print(error_message)
+            logging.info(error_message)
+            return "FAIL", error_message
+        except:
+            error_message = 'HTTPError: {}'.format(e.code)
+            print(error_message)
+            logging.info(error_message)
+            return "FAIL", error_message
     except urllib.error.URLError as e:
         # Not an HTTP-specific error (e.g. connection refused)
-        error_message = 'URLError: {}'.format(e.reason)
-        print(error_message)
-        logging.info(error_message)
-        return "FAIL", error_message
+        try:
+            conn.close()
+            error_message = 'URLError: {}'.format(e.reason)
+            print(error_message)
+            logging.info(error_message)
+            return "FAIL", error_message
+        except:
+            error_message = 'URLError: {}'.format(e.reason)
+            print(error_message)
+            logging.info(error_message)
+            return "FAIL", error_message
     except Exception as e:
         # other reasons such as "your connection is not secure"
-        print(e)
-        logging.info(e)
-        return "FAIL", e
+        try:
+            conn.close()
+            print(e)
+            logging.info(e)
+            return "FAIL", e
+        except:
+            print(e)
+            logging.info(e)
+            return "FAIL", e
     except:
         # broad exception for anything else
-        print("Unknown error")
-        logging.info("Unknown error")
-        return "FAIL", "Unknown error"
+        try:
+            conn.close()
+            print("Unknown error")
+            logging.info("Unknown error")
+            return "FAIL", "Unknown error"
+        except:
+            print("Unknown error")
+            logging.info("Unknown error")
+            return "FAIL", "Unknown error"
 
     # check if redirected
     if conn.geturl() != url:
         print("Redirected to {}".format(conn.geturl()))
         logging.info("Redirected to {}".format(conn.geturl()))
+        conn.close()
         return "LIVE", "Redirected to {}".format(conn.geturl())
 
     # reaching this point means it received code 200
     print("Return code 200")
     logging.info("Return code 200")
+    conn.close()
     return "LIVE", "Return code 200"
 
 
@@ -628,18 +658,18 @@ def signal_handler_sigalrm(sig, frame):
 
 
 def main():
-    csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range, \
-        chrome_args, screensize, keep_cookies = parse_args()
-    set_up_logging(pics_out_path)
+
+    import read_config_file
+    import config
+
+    set_up_logging(config.archive_pics_dir)
     signal.signal(signal.SIGINT, signal_handler_sigint)
     signal.signal(signal.SIGALRM, signal_handler_sigalrm)
 
     print("Taking screenshots")
-    screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range,
-                   chrome_args, screensize, keep_cookies)
+    screenshot_csv(config.archive_urls_csv, config.archive_index_csv, config.archive_pics_dir, config.a_method, config.a_timeout, [config.a_range_min, config.a_range_max], config.a_chrome_args, [config.a_screen_height, config.a_screen_width], config.a_keep_cookies)
     # if use_db:
     # screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy)
-
 
 if __name__ == "__main__":
     main()
