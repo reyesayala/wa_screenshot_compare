@@ -297,16 +297,31 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
             await click_button(page, "No Thanks")
             await page.keyboard.press("Escape")
 
+    
+    except errors.TimeoutError as e:
         await page.screenshot(path='{0}{1}.{2}.{3}.png'.format(pics_out_path, archive_id, url_id, date))
-
-    except Exception as e:
-        # https://github.com/GoogleChrome/puppeteer/issues/2269
         try:
             await page.close()
             await browser.close()
         except:
             await browser.close()
         raise e
+
+    except Exception as e:
+        try:
+            await page.close()
+            await browser.close()
+        except:
+            await browser.close()
+        raise e
+        # https://github.com/GoogleChrome/puppeteer/issues/2269
+    else:
+        await page.screenshot(path='{0}{1}.{2}.{3}.png'.format(pics_out_path, archive_id, url_id, date))
+        try:
+            await page.close()
+            await browser.close()
+        except:
+            await browser.close()
 
     try:
         await page.close()
@@ -524,6 +539,9 @@ def parse_args():
     csv_in_name = args.csv
     csv_out_name = args.indexcsv
     keep_cookies = not args.keep_cookies
+
+    if not os.path.exists(pics_out_path):
+        os.makedirs(pics_out_path)
 
     # if args.db is not None:
     #     connect_sql(args.db)
