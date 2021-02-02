@@ -380,36 +380,58 @@ def check_site_availability(url):
         conn = urllib.request.urlopen(url)
     except urllib.error.HTTPError as e:
         # Return code error (e.g. 404, 501, ...)
-        error_message = 'HTTPError: {}'.format(e.code)
-        print(error_message)
-        logging.info(error_message)
-        return "FAIL", error_message
+        try:
+            conn.close()
+        except:
+            print("Process close error")
+        finally:
+            error_message = 'HTTPError: {}'.format(e.code)
+            print(error_message)
+            logging.info(error_message)
+            return "FAIL", error_message
     except urllib.error.URLError as e:
         # Not an HTTP-specific error (e.g. connection refused)
-        error_message = 'URLError: {}'.format(e.reason)
-        print(error_message)
-        logging.info(error_message)
-        return "FAIL", error_message
+        try:
+            conn.close()
+        except:
+            print("Process close error")
+        finally:
+            error_message = 'URLError: {}'.format(e.reason)
+            print(error_message)
+            logging.info(error_message)
+            return "FAIL", error_message
     except Exception as e:
         # other reasons such as "your connection is not secure"
-        print(e)
-        logging.info(e)
-        return "FAIL", e
+        try:
+            conn.close()
+        except:
+            print("Process close error")
+        finally:
+            print(e)
+            logging.info(e)
+            return "FAIL", e
     except:
         # broad exception for anything else
-        print("Unknown error")
-        logging.info("Unknown error")
-        return "FAIL", "Unknown error"
+        try:
+            conn.close()
+        except:
+            print("Process close error")
+        finally:
+            print("Unknown error")
+            logging.info("Unknown error")
+            return "FAIL", "Unknown error"
 
     # check if redirected
     if conn.geturl() != url:
         print("Redirected to {}".format(conn.geturl()))
         logging.info("Redirected to {}".format(conn.geturl()))
+        conn.close()
         return "LIVE", "Redirected to {}".format(conn.geturl())
 
     # reaching this point means it received code 200
     print("Return code 200")
     logging.info("Return code 200")
+    conn.close()
     return "LIVE", "Return code 200"
 
 
