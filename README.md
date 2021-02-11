@@ -17,43 +17,98 @@ conda deactivate
 ```
 
 ## Usage
-> **Notes:** Including the -h flag in any of the programs will display a description of all the command line flags.
+> **Notes:** Including the -h flag for programs using command line flags will display a description of all the flags.
+
+### screenshot_compare.ini
+
+This is a setting file used by config.py to pass arguments into programs. The file is partitioned such that each section corresponds to a program in this repository. A DEFAULT section exists where arguments common to multiple programs can be listed under DEFAULT.
+
+Note that to use arguments under the DEFAULT section, you will need to replace relevant variables under config.py to apply your desired changes. 
+
+The following settings/arguments can be altered: 
+
+**DEFAULT:**
+
+- timeout - (optional) Specify duration before timeout for each site, in seconds. Default is 30 seconds.
+  - This argument can replace c_timeout and a_timeout.
+- picsout - Directory to the output of the screenshots.
+  - This argument can replace current_pics_dir and archive_pics_dir.
+- current_urls_csv - Input CSV file with current URLs. 
+- method - Which method to take the screenshots: 0 for chrome, 1 for puppeteer, 2 for cutycapt.
+  - This argument can replace c_method and a_method.
+- banner - (optional) Include to generate URLs that includes a banner. Default removes banners.
+- keep_cookies - (optional) Specify to NOT remove cookies. Default removes cookies.
+  - This argument can replace c_keep_cookies and a_keep_cookies.
+- screen_height & screen_width - (optional) Specify to take screenshots of a certain size; affects browser viewport as well. Default height is 768, and default width is 1024.
+  - These arguments can replace c_screen_height, c_screen_width, a_screen_height, and a_screen_width.
+
+**read_seed:**
+
+* seed_list - The CSV file with the seed URLs. 
+* current_urls_csv - The CSV file to write the URLs.
+* collection_id - ID of the archive.
+* name - Name of the archive.
+* sort - (optional) Include to sort the output.
+
+**create_archive_urls:**
+
+* current_urls_csv - Input CSV file with current URLs. 
+* archive_urls_csv - The CSV file to write the archive URLs.
+* banner - (optional) Include to generate URLs that includes a banner. Default removes banners.
+
+**current_screenshot:** 
+
+* current_pics_dir - Directory to output the screenshots.
+* current_index_csv - The CSV file to write the index.
+* c_method - Which method to take the screenshots: 0 for chrome, 1 for puppeteer, 2 for cutycapt.
+* c_screen_height & c_screen_width - (optional) Specify to take screenshots of a certain size; affects browser viewport as well. Default height is 768, and default width is 1024.
+* c_timeout - (optional) Specify duration before timeout for each site, in seconds. Default is 30 seconds.
+* c_keep_cookies  - (optional) Specify to NOT remove cookies. Default removes cookies.
+* c_chrome_args - (optional) Additional arguments for pyppeteer chrome. Ex. c_chrome_args = ["--disable-gpu ", "--no-sandbox"]
+* c_range_min & c_range_max - (optional) Specify to take screenshots between these lines, inclusive. Default takes screenshots of everything.
+
+**archive_screenshot:**
+
+* archive_pics_dir - Directory to output the screenshots.
+* archive_index_csv - The CSV file to write the index.
+* a_method - Which method to take the screenshots: 0 for chrome, 1 for puppeteer, 2 for cutycapt.
+* a_screen_height & a_screen_width - (optional) Specify to take screenshots of a certain size; affects browser viewport as well. Default height is 768, and default width is 1024.
+* a_timeout - (optional) Specify duration before timeout for each site, in seconds. Default is 30 seconds.
+* a_keep_cookies  - (optional) Specify to NOT remove cookies. Default removes cookies.
+* a_chrome_args - (optional) Additional arguments for pyppeteer chrome. Ex. a_chrome_args = ["--disable-gpu ", "--no-sandbox"]
+* a_range_min & a_range_max - (optional) Specify to take screenshots between these lines, inclusive. Default takes screenshots of everything.
+
+**get_file_names:**
+
+* file_names_csv - The CSV file to write the urls and file names. 
+* print - (optional) Include to print urls and file names to stdout, default doesn't print.
+
+**calculate_similarity:**
+
+* scores_file_csv - The CSV file to write the results of the comparisons.
+* ssim - (optional) Include to calculate structural similarity.
+* mse - (optional) Include to calculate mean square error.
+* vector - (optional) Include to calculate vector comparison score.
+* similarity_print - (optional) Include to print results to stdout.
 
 ### read_seed.py
+
 This program takes a CSV file with the seed website URLs and outputs it into another CSV.
 > A valid seed csv file should have the URLs as the first column, other columns are ignored.
 > The output CSV file will have three columns, archive ID, URL ID, and URL.
 
 Command syntax: 
 ```
-python3 read_seed.py --csv=your/directory/Collection-seed-list.csv --db=urls.db --out=current_urls.csv --ext=1234 --name="Collection Name" --sort
+python3 read_seed.py
 ```
-Arguments:
-* csv - The CSV file with the seed URLs. 
-* db - The DB file to store the URLs. DEPRECATED
-* out - The CSV file to write the URLs.
-* ext - ID of the archive.
-* name - Name of the archive.
-* sort - (optional) Include to sort the output.
-
-### create-archive_urls.py
+### create_archive_urls.py
 This program takes the CSV from read_seed.py and gets the Archive-It archive URL.  
 > The output CSV file will have three columns, archive ID, URL ID, and URL.
 
 Command syntax: 
 ```
-python3 create_archive_urls.py --csv=current_urls.csv --out=archive_urls.csv --banner
+python3 create_archive_urls.py
 ```
-Or
-```
-python3 create_archive_urls.py --db=urls.db --out=archive_urls.csv --banner
-```
-Arguments:
-* csv - Input CSV file with current URLs. 
-* db - Input DB file with URLs, output is automatically inserted in db. DEPRECATED
-* out - The CSV file to write the URLs.
-* banner - (optional) Include to generate URLs that has the banner, default removes banner.
-
 ### current_screenshot.py
 This program takes the CSV with the current website URLS and takes screenshots. The output CSV will have six columns: archive ID, URL ID, URL, site status, site message, and screenshot message: 
 * site_status - Contains 'LIVE' if the URL can be reached or redirects, and 'FAIL' if the URL could not be reached (ex. 404).
@@ -63,19 +118,8 @@ This program takes the CSV with the current website URLS and takes screenshots. 
 
 Command syntax: 
 ```
-python3 current_screenshot.py --csv=current_urls.csv --picsout=current_pics/ --indexcsv=current_index.csv --method=1 --timeout=30 --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024 --keep-cookies
+python3 current_screenshot.py
 ```
-Arguments:
-* csv - Input CSV file with current URLs. 
-* picsout - Directory to output the screenshots.
-* indexcsv - The CSV file to write the index.
-* method - Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
-* timeout - (optional) Specify duration before timeout for each site, in seconds, default 30 seconds.
-* range - (optional) Specify to take screenshots between these lines, inclusive. Syntax: low,high. ex. 0,1000. default takes screenshots of everything.
-* chrome-args - (optional) Additional arguments for pyppeteer chrome. ex. --args="--disable-gpu --no-sandbox".
-* screen-size - (optional) Specify to take screenshots of size, affects browser viewport too. Syntax: height,width. ex 600,800. default size is 768,1024.
-* keep-cookies  - (optional) Specify to NOT remove cookies banners. Dafault removes cookies banners.
-
 ### archive_screenshot.py
 This program takes the CSV with the archive website URLS and takes screenshots. The output CSV will have seven columns, archive ID, URL ID, capture date, URL, site status, site message, and screenshot message.
 * site_status - Contains 'LIVE' if the URL can be reached or redirects, and 'FAIL' if the URL could not be reached (ex. 404).
@@ -85,38 +129,16 @@ This program takes the CSV with the archive website URLS and takes screenshots. 
 
 Command syntax:
 ```
-python3 archive_screenshot.py --csv=archive_urls.csv  --picsout=archive_pics/ --indexcsv=archive_index.csv --method=1 --timeout=30 --range=0,1000 --chrome-args="--no-sandbox" --screen-size=768,1024 --keep-cookies
+python3 archive_screenshot.py
 ```
-Arguments:
-* csv - Input CSV file with archive URLs. 
-* picsout - Directory to output the screenshots.
-* indexcsv - The CSV file to write the index.
-* method - Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
-* timeout - (optional) Specify duration before timeout for each site, in seconds, default 30 seconds.
-* range - (optional) Specify to take screenshots between these lines, inclusive. Syntax: low,high. ex. 0,1000. default takes screenshots of everything.
-* chrome-args - (optional) Additional arguments for pyppeteer chrome. ex. --args="--disable-gpu --no-sandbox".
-* screen-size - (optional) Specify to take screenshots of size, affects browser viewport too. Syntax: height,width. ex 600,800. default size is 768,1024.
-* keep-cookies  - (optional) Specify to NOT remove cookies banners. Dafault removes cookies banners.
-
 ### get_file_names.py
 This program outputs a CSV file which maps the current and archive URLs with their respective screenshots.
 > The output CSV will have four columns, current URl, archive URL, current screenshot file name, archive screenshot file name.
 
 Command syntax:
 ```
-python3 get_file_names.py --currcsv=current_index.csv --archcsv=archive_index.csv --out=file_names.csv --print
+python3 get_file_names.py
 ```
-Or
-```
-python3 get_file_names.py --db=urls.db --out=file_names.csv --print
-```
-Arguments:
-* currcsv - The CSV file with the current screenshots index.
-* archcsv - The CSV file with the archive screenshots index.
-* db - Input DB file with urls. DEPRECATED
-* out - The CSV file to write the urls and file names. 
-* print - (optional) Include to print urls and file names to stdout, default doesn't print.
-
 ### randomly_select_screenshots.py
 This program outputs a CSV file where each current screenshot is mapped to only one archive screenshot.
 > The output CSV will essentially be the same as the output of get_file_names.py
@@ -138,18 +160,8 @@ This program gets all the screenshots and calls functions in similarity_measures
 
 command syntax:
 ```
-python3 calculate_similarity.py --csv=file_names.csv --currdir=current_pics/ --archdir=archive_pics/ --out=score.csv --ssim --mse --vec --print
+python3 calculate_similarity.py
 ```
-Arguments:
-* csv - The CSV file with screenshot file names.
-* currdir - Directory with screenshots of the current websites.
-* archdir - Directory with screenshots of the archive websites.
-* out - The CSV file to write the results of the comparisons.
-* ssim - (optional) Include to calculate structural similarity.
-* mse - (optional) Include to calculate mean square error.
-* vec - (optional) Include to calculate vector comparison score.
-* print - (optional) Include to print results to stdout.
-
 ### similarity_measures.py
 Contains functions used by calculate_similarity.py which will be used to calculate the scores.
 
@@ -169,6 +181,8 @@ Arguments:
 ## Authors
 * **Brenda Reyes Ayala** 
 * **James Sun**
+* **Qiufeng Du**
+* **Tasbire Saiyera**
 ## License
 todo
 

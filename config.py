@@ -42,7 +42,7 @@ def load_config():
     sect = 'current_screenshot'
     globals()['current_index_csv'] = config.get(sect, 'current_index_csv')
     globals()['current_pics_dir'] = config.get(sect, 'current_pics_dir')
-    globals()['c_method'] = config.getint(sect, 'method')
+    globals()['c_method'] = config.getint(sect, 'c_method')
     globals()['c_screen_height'] = config.getint(sect, 'c_screen_height')
     globals()['c_screen_width'] = config.getint(sect, 'c_screen_width')
     globals()['c_timeout'] = config.getint(sect, 'c_timeout')

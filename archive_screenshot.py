@@ -671,18 +671,19 @@ def signal_handler_sigalrm(sig, frame):
 
 
 def main():
-    csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range, \
-        chrome_args, screensize, keep_cookies = parse_args()
-    set_up_logging(pics_out_path)
     signal.signal(signal.SIGINT, signal_handler_sigint)
     signal.signal(signal.SIGALRM, signal_handler_sigalrm)
+    
+    import read_config_file
+    import config
+    
 
     print("Taking screenshots")
-    screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range,
-                   chrome_args, screensize, keep_cookies)
-    # if use_db:
-    # screenshot_db(csv_out_name, pics_out_path, screenshot_method, make_csv, timeout_duration, lazy, be_lazy)
-
+    set_up_logging(config.archive_pics_dir)
+    screenshot_csv(config.archive_urls_csv, config.archive_index_csv, config.archive_pics_dir, config.a_method, config.a_timeout, [config.a_range_min, config.a_range_max], config.a_chrome_args, [config.a_screen_height, config.a_screen_width], config.a_keep_cookies)
+    
+    print("The current screenshots have been created in this directory: ", config.archive_pics_dir)
+    
 
 if __name__ == "__main__":
     main()
