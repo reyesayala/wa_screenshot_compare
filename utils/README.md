@@ -45,6 +45,29 @@ Command syntax:
 python3 rm_dup_with_sim.py <something>.csv
 ```
 
-> The input csv should have the following header:
+### website_exists.py
+The program checks whether the url in the seed file is still available.
+
+Example:
+
+    Input:
+
+    Seed URL,Group,Status,Frequency,Type,Access
+    http://www.firstperspective.ca/news/2941-let-s-be-idle-no-more,,False,NONE,normal,True
+
+    Output:
+
+    "Id","url","availability","site_status","site_message"
+    "1","http://www.firstperspective.ca/news/2941-let-s-be-idle-no-more","Website does not exist","FAIL","HTTPError: 403"
+
+
+Command syntax: 
+```
+python3 website_exists.py --input=Idle-No-More-seed-list.csv --output=out.csv --timeout=4
+```
+Arguments:
+* input - The CSV file with the current urls.
+* output - The CSV file to write the output.
+* timeout - (optional) Specify duration before timeout, in seconds, default 30 seconds.
 >
 > "current_url", "archive_url", "current_file_name", "archive_file_name", "ssim_score", "mse_score", "vector_score"
