@@ -677,6 +677,8 @@ def main():
     import read_config_file
     import config
     
+    if not os.path.exists(config.archive_pics_dir):
+        os.makedirs(config.archive_pics_dir)
 
     print("Taking screenshots")
     set_up_logging(config.archive_pics_dir)
