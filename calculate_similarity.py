@@ -181,12 +181,13 @@ def parse_args():
 
 
 def main():
-    csv_in_name, curr_img_dir, arch_img_dir, ssim_flag, mse_flag, vec_flag, csv_out_name, do_print = parse_args()
-
+    # csv_in_name, curr_img_dir, arch_img_dir, ssim_flag, mse_flag, vec_flag, csv_out_name, do_print = parse_args()
+    import read_config_file
+    import config
     print("Reading the input files ...")
-    image_dict, url_name_dict = read_input_file(csv_in_name, curr_img_dir, arch_img_dir)
+    image_dict, url_name_dict = read_input_file(config.file_names_csv, config.current_pics_dir, config.archive_pics_dir)
 
-    find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, csv_out_name, do_print)
+    find_scores(image_dict, url_name_dict, config.ssim, config.mse, config.vector, config.scores_file_csv, config.print)
 
 
 main()

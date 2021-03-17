@@ -53,9 +53,11 @@ def parse_args():
 #python prog.py --l1=1,2,3,4
 def main():
 
-	input_dir, output_dir, new_dimensions = parse_args()
-	print("Reading the input files ...")
-	crop_images(input_dir, output_dir, new_dimensions)
+	# input_dir, output_dir, new_dimensions = parse_args()
+    import read_config_file
+    import config
+    print("Reading the input files ...")
+    crop_images(config.pics_archived_banners_dir, config.pics_archived_no_banners_dir, [config.dim_left, config.dim_top, config.dim_right, config.dim_bottom])
 
 
 main()
