@@ -66,13 +66,32 @@ def load_config():
 
     sect = 'get_file_names'
     globals()['file_names_csv'] = config.get(sect, 'file_names_csv')
+    globals()['current_index_csv'] = config.get(sect, 'current_index_csv')
+    globals()['archive_index_csv'] = config.get(sect, 'archive_index_csv')
     globals()['print'] = config.getboolean(sect, 'print')
     
+    sect = 'randomly_select_screenshots'
+    globals()['file_names_csv'] = config.get(sect, 'file_names_csv')
+    globals()['selected_file_names'] = config.get(sect, 'selected_file_names')
+    globals()['num'] = config.getint(sect, 'num')
+    globals()['total'] = config.getint(sect, 'total')
+
     sect = 'calculate_similarity'
+    globals()['file_names_csv'] = config.get(sect, 'file_names_csv')
+    globals()['current_pics_dir'] = config.get(sect, 'current_pics_dir')
+    globals()['archive_pics_dir'] = config.get(sect, 'archive_pics_dir')
     globals()['ssim'] = config.getboolean(sect, 'ssim')
     globals()['mse'] = config.getboolean(sect, 'mse')
     globals()['vector'] = config.getboolean(sect, 'vector')
     globals()['scores_file_csv'] = config.get(sect, 'scores_file_csv')
     globals()['similarity_print'] = config.getboolean(sect, 'similarity_print')
-    
+    globals()['print'] = config.getboolean(sect, 'print')
+
+    sect = 'crop_banners_from_images'
+    globals()['pics_archived_banners_dir'] = config.get(sect, 'pics_archived_banners_dir')
+    globals()['pics_archived_no_banners_dir'] = config.get(sect, 'pics_archived_no_banners_dir')
+    globals()['dim_left'] = config.getint(sect, 'dim_left')
+    globals()['dim_top'] = config.getint(sect, 'dim_top')
+    globals()['dim_right'] = config.getint(sect, 'dim_right')
+    globals()['dim_bottom'] = config.getint(sect, 'dim_bottom')
     

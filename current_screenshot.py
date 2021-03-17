@@ -617,6 +617,9 @@ def main():
 
     print("Taking screenshots")
     #create_with_csv(config.archive_urls_csv, config.current_urls_csv, config.banner)
+    if not os.path.exists(config.current_pics_dir):
+        os.makedirs(config.current_pics_dir)
+
     set_up_logging(config.current_pics_dir)
     print(config.c_screen_width)
     screenshot_csv(config.current_urls_csv, config.current_index_csv, config.current_pics_dir, config.c_method, config.c_timeout, [config.c_range_min, config.c_range_max], config.c_chrome_args, [config.c_screen_height, config.c_screen_width], config.c_keep_cookies)

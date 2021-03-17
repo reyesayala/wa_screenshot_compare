@@ -92,8 +92,11 @@ def parse_args():
 
 
 def main():
-    input_csv, out_file, num, total = parse_args()
-    make_selection(input_csv, out_file, num, total)
+    # input_csv, out_file, num, total = parse_args()
+    import read_config_file
+    import config
+
+    make_selection(config.file_names_csv, config.selected_file_names, config.num, config.total)
 
 
 main()
