@@ -67,7 +67,7 @@ def calculate_ssim(current_image_name, archive_image_name):
             sphx-glr-auto-examples-transform-plot-ssim-py
 
     """
-
+    
     current_image = io.imread(current_image_name)
     archive_image = io.imread(archive_image_name)
     (current_image_cropped, archive_image_cropped) = cropping_images(current_image, archive_image)

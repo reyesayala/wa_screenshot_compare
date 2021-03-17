@@ -49,8 +49,8 @@ def open_with_csv(curr_csv_name, arch_csv_name, csv_out_name, do_print):
                         elif curl_id < aurl_id or cscreenshot_status != "Screenshot successful":
                             crow = next(curr_csv_reader)
                         else:
-                            current_filename = "{0}.{1}.png".format(carchive_id, curl_id)
-                            archive_filename = "{0}.{1}.{2}.png".format(aarchive_id, aurl_id, adate)
+                            current_filename = "{0}.{1}.jpg".format(carchive_id, curl_id)
+                            archive_filename = "{0}.{1}.{2}.jpg".format(aarchive_id, aurl_id, adate)
                             csv_writer.writerow([curl, aurl, current_filename, archive_filename])
 
                             if do_print:
