@@ -13,6 +13,8 @@ import signal
 import re
 import sys
 from PIL import Image
+sys.path.insert(0, './utils/')
+from website_exists_mod import *
 
 
 def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, timeout_duration, read_range,
@@ -192,8 +194,12 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
 
     """
 
-    site_status, site_message = check_site_availability(url)
+    # site_status, site_message = check_site_availability(url)
+    site_status, site_message, availability = is_website_exist(url, 10)
     if site_status == "FAIL":
+        logging.info("Website does not exist")
+        print("*"*100)
+        print("not exist")
         return site_status, site_message, "Screenshot unsuccessful"
 
     if screenshot_method == 0:
@@ -355,12 +361,14 @@ def chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_dura
 def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration):
     # not fully implemented
     box = (0, 0, 1024, 768)
-    command = "timeout {5}s xvfb-run --server-args=\"-screen 0, 1024x768x24\" " \
-              "/usr/bin/cutycapt --url='{0}' --out={1}{2}.{3}.{4}.jpg --delay=2000" \
-        .format(url, pics_out_path, archive_id, url_id, date, timeout_duration)
+    command = "xvfb-run --server-args=\"-screen 0, 1024x768x24\" " \
+              "/usr/bin/cutycapt --url='{0}' --out={1}{2}.{3}.{4}.jpg --delay=2000 --max-wait={5}" \
+        .format(url, pics_out_path, archive_id, url_id, date, timeout_duration*1000)
+    print(command)
     try:
         time.sleep(1)  # cutycapt needs to rest
-        if os.system(command) == 0:
+        c_out = os.system(command)
+        if (c_out == 0 or c_out == 31744):
             logging.info("Screenshot successful")
             print("Screenshot successful")
             print("Cropping image")
@@ -372,11 +380,15 @@ def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_du
             return "Screenshot successful"
         else:
             logging.info("Screenshot unsuccessful")
+            logging.info("process exit value: %d" % c_out)
             print("Screenshot unsuccessful")
             return "Screenshot unsuccessful"
-    except:  # unknown error
+    except Exception as e:  # unknown error
+        print(e)
         logging.info("Screenshot unsuccessful")
         print("Screenshot unsuccessful")
+        logging.info("process exit value: %d" % c_out)
+        print("process exit value: %d" % c_out)
         return "Screenshot unsuccessful"
 #cutycapt automatically takes a screenshot of the entire website, so the images need to be cropped
 
