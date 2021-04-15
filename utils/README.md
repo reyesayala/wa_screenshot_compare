@@ -45,8 +45,8 @@ Command syntax:
 python3 rm_dup_with_sim.py <something>.csv
 ```
 
-### website_exists.py
-The program checks whether the url in the seed file is still available.
+### web_exist_csv.py
+The program checks and records whether the url in the seed file is still available.
 
 Example:
 
@@ -63,7 +63,7 @@ Example:
 
 Command syntax: 
 ```
-python3 website_exists.py --input=Idle-No-More-seed-list.csv --output=out.csv --timeout=4
+python3 web_exist_csv.py --input=Idle-No-More-seed-list.csv --output=out.csv --timeout=4
 ```
 Arguments:
 * input - The CSV file with the current urls.
