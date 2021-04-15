@@ -6,8 +6,8 @@ import csv
 import asyncio
 import urllib.request
 import urllib.error
-from pyppeteer import launch
-from pyppeteer import errors
+#from pyppeteer import launch
+#from pyppeteer import errors
 import logging
 import signal
 import re
@@ -39,7 +39,7 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
         Contains two int which are height and width of the browser viewport.
     keep_cookies : bool
         Whether or not to run click_button() to attempt to remove cookies banners. False to remove.
-        
+
     """
 
     with open(csv_in_name, 'r') as csv_file_in:
@@ -58,7 +58,7 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
                     break
                 line_count += 1
 
-                if read_range is not None:  # skip if not within range
+                if (read_range[0] != None) and (read_range[1] != None):  # skip if not within range
                     if line_count < read_range[0] or line_count > read_range[1]:
                         continue
 
@@ -73,8 +73,11 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
                 print("\nurl #{0} {1}".format(url_id, url))
                 logging.info("url #{0} {1}".format(url_id, url))
 
-                site_status, site_message, screenshot_message = take_screenshot(archive_id, url_id, date, url,
+                try:
+                    site_status, site_message, screenshot_message = take_screenshot(archive_id, url_id, date, url,
                     pics_out_path, screenshot_method, timeout_duration, chrome_args, screensize, keep_cookies)
+                except:
+                    continue
 
                 csv_writer.writerow([archive_id, url_id, date, url, site_status, site_message, screenshot_message])
 
@@ -179,7 +182,7 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
         Contains two int which are height and width of the browser viewport.
     keep_cookies : bool
         Whether or not to run click_button() to attempt to remove cookies banners. False to remove.
-        
+
     Returns
     -------
     site_status : str
@@ -270,7 +273,7 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
         Contains two int which are height and width of the browser viewport.
     keep_cookies : bool
         Whether or not to run click_button() to attempt to remove cookies banners. False to remove.
-        
+
     References
     ----------
     .. [1] https://pypi.org/project/pyppeteer/
@@ -300,7 +303,7 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
             await click_button(page, "No Thanks")
             await page.keyboard.press("Escape")
 
-    
+
     except errors.TimeoutError as e:
         await page.screenshot(path='{0}{1}.{2}.{3}.png'.format(pics_out_path, archive_id, url_id, date))
         try:
@@ -516,7 +519,7 @@ def parse_args():
         Contains two int which are height and width of the browser viewport.
     keep_cookies : bool
         Whether or not to run click_button() to attempt to remove cookies banners. False to remove.
-        
+
     """
 
     parser = argparse.ArgumentParser()
@@ -671,21 +674,22 @@ def signal_handler_sigalrm(sig, frame):
 
 
 def main():
+
     signal.signal(signal.SIGINT, signal_handler_sigint)
     signal.signal(signal.SIGALRM, signal_handler_sigalrm)
-    
+
     import read_config_file
     import config
-    
+
     if not os.path.exists(config.archive_pics_dir):
         os.makedirs(config.archive_pics_dir)
 
     print("Taking screenshots")
     set_up_logging(config.archive_pics_dir)
     screenshot_csv(config.archive_urls_csv, config.archive_index_csv, config.archive_pics_dir, config.a_method, config.a_timeout, [config.a_range_min, config.a_range_max], config.a_chrome_args, [config.a_screen_height, config.a_screen_width], config.a_keep_cookies)
-    
+
     print("The current screenshots have been created in this directory: ", config.archive_pics_dir)
-    
+
 
 if __name__ == "__main__":
     main()

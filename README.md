@@ -65,7 +65,7 @@ The following settings/arguments can be altered:
 * c_timeout - (optional) Specify duration before timeout for each site, in seconds. Default is 30 seconds.
 * c_keep_cookies  - (optional) Specify to NOT remove cookies. Default removes cookies.
 * c_chrome_args - (optional) Additional arguments for pyppeteer chrome. Ex. c_chrome_args = ["--disable-gpu ", "--no-sandbox"]
-* c_range_min & c_range_max - (optional) Specify to take screenshots between these lines, inclusive. Default takes screenshots of everything.
+* c_range_min & c_range_max - Specify to take screenshots between these lines, inclusive. Setting arguments to 'None' takes screenshots of everything.
 
 **archive_screenshot:**
 
@@ -76,7 +76,7 @@ The following settings/arguments can be altered:
 * a_timeout - (optional) Specify duration before timeout for each site, in seconds. Default is 30 seconds.
 * a_keep_cookies  - (optional) Specify to NOT remove cookies. Default removes cookies.
 * a_chrome_args - (optional) Additional arguments for pyppeteer chrome. Ex. a_chrome_args = ["--disable-gpu ", "--no-sandbox"]
-* a_range_min & a_range_max - (optional) Specify to take screenshots between these lines, inclusive. Default takes screenshots of everything.
+* a_range_min & a_range_max - Specify to take screenshots between these lines, inclusive. Setting arguments to 'None' takes screenshots of everything.
 
 **get_file_names:**
 

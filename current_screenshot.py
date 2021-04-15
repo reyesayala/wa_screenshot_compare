@@ -55,7 +55,7 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
                     break
                 line_count += 1
 
-                if read_range is not None:  # skip if not within range
+                if (read_range[0] != None) and (read_range[1] != None):  # skip if not within range
                     if line_count < read_range[0] or line_count > read_range[1]:
                         continue
 
@@ -150,7 +150,7 @@ def take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, t
         Contains two int which are height and width of the browser viewport.
     keep_cookies : bool
         Whether or not to run click_button() to attempt to remove cookies banners. False to remove.
-        
+
     Returns
     -------
     site_status : str
@@ -277,7 +277,7 @@ async def puppeteer_screenshot(archive_id, url_id, url, pics_out_path, timeout_d
         Contains two int which are height and width of the browser viewport.
     keep_cookies : bool
         Whether or not to run click_button() to attempt to remove cookies banners. False to remove.
-        
+
     References
     ----------
     .. [1] https://pypi.org/project/pyppeteer/
@@ -623,9 +623,8 @@ def main():
     set_up_logging(config.current_pics_dir)
     print(config.c_screen_width)
     screenshot_csv(config.current_urls_csv, config.current_index_csv, config.current_pics_dir, config.c_method, config.c_timeout, [config.c_range_min, config.c_range_max], config.c_chrome_args, [config.c_screen_height, config.c_screen_width], config.c_keep_cookies)
-    
+
     print("The current screenshots have been created in this directory: ", config.current_pics_dir)
 
 
 main()
-
