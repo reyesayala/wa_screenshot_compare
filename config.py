@@ -30,15 +30,15 @@ def load_config():
     # Settings for read_seed.py
     sect = 'read_seed'
     globals()['seed_list'] = config.get(sect, 'seed_list')
-    globals()['current_urls_csv'] = config.get(sect, 'current_urls_csv')    
+    globals()['current_urls_csv'] = config.get(sect, 'current_urls_csv')
     globals()['collection_id'] = config.get(sect, 'collection_id')
     globals()['name'] = config.get(sect, 'name')
     globals()['sort'] = config.getboolean(sect, 'sort')
-    
+
     sect = 'create_archive_urls'
     globals()['archive_urls_csv'] = config.get(sect, 'archive_urls_csv')
     globals()['banner'] = config.getboolean(sect, 'banner')
-    
+
     sect = 'current_screenshot'
     globals()['current_index_csv'] = config.get(sect, 'current_index_csv')
     globals()['current_pics_dir'] = config.get(sect, 'current_pics_dir')
@@ -48,9 +48,18 @@ def load_config():
     globals()['c_timeout'] = config.getint(sect, 'c_timeout')
     globals()['c_keep_cookies'] = config.get(sect, 'c_keep_cookies')
     globals()['c_chrome_args'] = config.get(sect, 'c_chrome_args')
-    globals()['c_range_min'] = config.getint(sect, 'c_range_min')
-    globals()['c_range_max'] = config.getint(sect, 'c_range_max')
-    
+
+    # Range could be null
+    try:
+        globals()['c_range_min'] = config.getint(sect, 'c_range_min')
+    except:
+        globals()['c_range_min'] = None
+
+    try:
+        globals()['c_range_max'] = config.getint(sect, 'c_range_max')
+    except:
+        globals()['c_range_max'] = None
+
     sect = 'archive_screenshot'
     globals()['archive_pics_dir'] = config.get(sect, 'archive_pics_dir')
     globals()['archive_index_csv'] = config.get(sect, 'archive_index_csv')
@@ -60,16 +69,25 @@ def load_config():
     globals()['a_timeout'] = config.getint(sect, 'a_timeout')
     globals()['a_keep_cookies'] = config.get(sect, 'a_keep_cookies')
     globals()['a_chrome_args'] = config.get(sect, 'a_chrome_args')
-    globals()['a_range_min'] = config.getint(sect, 'a_range_min')
-    globals()['a_range_max'] = config.getint(sect, 'a_range_max')
-    
+
+    # Range could be null
+    try:
+        globals()['a_range_min'] = config.getint(sect, 'a_range_min')
+    except:
+        globals()['a_range_min'] = None
+
+    try:
+        globals()['a_range_max'] = config.getint(sect, 'a_range_max')
+    except:
+        globals()['a_range_max'] = None
+
 
     sect = 'get_file_names'
     globals()['file_names_csv'] = config.get(sect, 'file_names_csv')
     globals()['current_index_csv'] = config.get(sect, 'current_index_csv')
     globals()['archive_index_csv'] = config.get(sect, 'archive_index_csv')
     globals()['print'] = config.getboolean(sect, 'print')
-    
+
     sect = 'randomly_select_screenshots'
     globals()['file_names_csv'] = config.get(sect, 'file_names_csv')
     globals()['selected_file_names'] = config.get(sect, 'selected_file_names')
@@ -94,4 +112,3 @@ def load_config():
     globals()['dim_top'] = config.getint(sect, 'dim_top')
     globals()['dim_right'] = config.getint(sect, 'dim_right')
     globals()['dim_bottom'] = config.getint(sect, 'dim_bottom')
-    
