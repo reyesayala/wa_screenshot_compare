@@ -36,7 +36,6 @@ The following settings/arguments can be altered:
 - current_urls_csv - Input CSV file with current URLs. 
 - method - Which method to take the screenshots: 0 for chrome, 1 for puppeteer, 2 for cutycapt.
   - This argument can replace c_method and a_method.
-- banner - (optional) Include to generate URLs that includes a banner. Default removes banners.
 - keep_cookies - (optional) Specify to NOT remove cookies. Default removes cookies.
   - This argument can replace c_keep_cookies and a_keep_cookies.
 - screen_height & screen_width - (optional) Specify to take screenshots of a certain size; affects browser viewport as well. Default height is 768, and default width is 1024.
@@ -54,7 +53,7 @@ The following settings/arguments can be altered:
 
 * current_urls_csv - Input CSV file with current URLs. 
 * archive_urls_csv - The CSV file to write the archive URLs.
-* banner - (optional) Include to generate URLs that includes a banner. Default removes banners.
+* remove_banner - Specify "1" to remove banner, "0" otherwise.
 
 **current_screenshot:** 
 
