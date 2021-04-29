@@ -234,7 +234,7 @@ def main():
     import config
 
     print("Getting archive urls...")
-    create_with_csv(config.archive_urls_csv, config.current_urls_csv, config.banner)
+    create_with_csv(config.archive_urls_csv, config.current_urls_csv, config.remove_banner)
     print("File ", config.archive_urls_csv, "with the archived urls has been created")
 
 main()

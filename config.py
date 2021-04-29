@@ -37,7 +37,7 @@ def load_config():
 
     sect = 'create_archive_urls'
     globals()['archive_urls_csv'] = config.get(sect, 'archive_urls_csv')
-    globals()['banner'] = config.getboolean(sect, 'banner')
+    globals()['remove_banner'] = config.getboolean(sect, 'remove_banner')
 
     sect = 'current_screenshot'
     globals()['current_index_csv'] = config.get(sect, 'current_index_csv')
