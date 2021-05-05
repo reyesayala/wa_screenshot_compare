@@ -201,13 +201,20 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
     site_status, site_message, availability = is_website_exist(url, 10)
     if site_status == "FAIL":
         logging.info("Website does not exist")
-        print("*"*100)
-        print("not exist")
+        print("*"*20)
+        print("wesite not exist")
         return site_status, site_message, "Screenshot unsuccessful"
 
     if screenshot_method == 0:
         return site_status, site_message, chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration)
     elif screenshot_method == 2:
+        if (site_message.find("Redirected") == 0):
+            url = site_message.split()[2]
+            marker = archive_id+'/'
+            url_split = url.split(marker)[1]
+            date = url_split[:url_split.find('/')]
+            if (date.find("if_") != -1):
+                date = date[:-3]
         return site_status, site_message, cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration)
 
     elif screenshot_method == 1:
@@ -365,7 +372,7 @@ def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_du
     # not fully implemented
     box = (0, 0, 1024, 768)
     command = "xvfb-run --server-args=\"-screen 0, 1024x768x24\" " \
-              "/usr/bin/cutycapt --url='{0}' --out={1}{2}.{3}.{4}.jpg --delay=2000 --max-wait={5}" \
+              "/usr/bin/cutycapt --url='{0}' --out={1}{2}.{3}.{4}.png --delay=2000 --max-wait={5}" \
         .format(url, pics_out_path, archive_id, url_id, date, timeout_duration*1000)
     print(command)
     try:
@@ -375,11 +382,16 @@ def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_du
             logging.info("Screenshot successful")
             print("Screenshot successful")
             print("Cropping image")
-            filename = archive_id+"."+url_id+"."+date+".jpg"
+            filename = archive_id+"."+url_id+"."+date+".png"
             print(filename)
             im =    Image.open(pics_out_path+filename)
             cropped_image = im.crop(box)
-            cropped_image.save(pics_out_path+filename)
+            cropped_image = cropped_image.convert('RGB')
+            cropped_filename = archive_id+"."+url_id+"."+date+".jpg"
+            cropped_image.save(pics_out_path+cropped_filename)
+            rm_command = "rm "+pics_out_path+filename
+            os.system(rm_command)
+
             return "Screenshot successful"
         else:
             logging.info("Screenshot unsuccessful")
