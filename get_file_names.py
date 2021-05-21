@@ -40,6 +40,7 @@ def open_with_csv(curr_csv_name, arch_csv_name, csv_out_name, do_print):
                         cscreenshot_status = crow[-1]
                         [aarchive_id, aurl_id, adate, aurl] = arow[:4]
                         ascreenshot_status = arow[-1]
+                        ascreenshot_site_message = arow[-2]
 
                         curl_id = int(curl_id)
                         aurl_id = int(aurl_id)
@@ -49,6 +50,13 @@ def open_with_csv(curr_csv_name, arch_csv_name, csv_out_name, do_print):
                         elif curl_id < aurl_id or cscreenshot_status != "Screenshot successful":
                             crow = next(curr_csv_reader)
                         else:
+                            if (ascreenshot_site_message.find("Redirected") == 0):
+                                aurl = ascreenshot_site_message.split()[2]
+                                marker = aarchive_id+'/'
+                                aurl_split = aurl.split(marker)[1]
+                                adate = aurl_split[:aurl_split.find('/')]
+                                if (adate.find("if_") != -1):
+                                    adate = adate[:-3]
                             current_filename = "{0}.{1}.jpg".format(carchive_id, curl_id)
                             archive_filename = "{0}.{1}.{2}.jpg".format(aarchive_id, aurl_id, adate)
                             csv_writer.writerow([curl, aurl, current_filename, archive_filename])
