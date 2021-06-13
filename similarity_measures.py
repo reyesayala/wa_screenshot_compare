@@ -32,8 +32,10 @@ from skimage import img_as_float
 from skimage.measure import compare_ssim as ssim
 from skimage import io
 
-from PIL import Image
+from PIL import Image, ImageFile
 
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def cropping_images(image_filename_a, image_filename_b):
     o_width, o_height = image_filename_a.shape[:2]
@@ -68,18 +70,19 @@ def calculate_ssim(current_image_name, archive_image_name):
 
     """
     
-    current_image = io.imread(current_image_name)
-    archive_image = io.imread(archive_image_name)
-    (current_image_cropped, archive_image_cropped) = cropping_images(current_image, archive_image)
-
-    current_image_float = img_as_float(current_image_cropped)
-    archive_image_float = img_as_float(archive_image_cropped)
-
-    datarange = archive_image_float.max() - archive_image_float.min()
-    ssim_noise = ssim(current_image_float, archive_image_float, multichannel=True, data_range=datarange)
-
-    return ssim_noise
-
+    try:
+        current_image = io.imread(current_image_name)
+        archive_image = io.imread(archive_image_name)
+        (current_image_cropped, archive_image_cropped) = cropping_images(current_image, archive_image)
+        current_image_float = img_as_float(current_image_cropped)
+        archive_image_float = img_as_float(archive_image_cropped)
+        datarange = archive_image_float.max() - archive_image_float.min()
+        ssim_noise = ssim(current_image_float, archive_image_float, multichannel=True, data_range=datarange)
+        return ssim_noise
+    except:
+        print("Problems reading the file")
+        return None
+        
 
 def calculate_mse(current_image_name, archive_image_name):
     """Calculates the mean square error of the two given images

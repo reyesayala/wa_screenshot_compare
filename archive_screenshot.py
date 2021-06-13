@@ -216,7 +216,8 @@ def take_screenshot(archive_id, url_id, date, url, pics_out_path, screenshot_met
             if (date.find("if_") != -1):
                 date = date[:-3]
         return site_status, site_message, cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration)
-
+    elif screenshot_method == 3:
+        return site_status, site_message, selenium_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration)
     elif screenshot_method == 1:
         try:
             signal.alarm(timeout_duration * 2 + 60)  # timer for when asyncio stalls on a invalid state error
@@ -348,6 +349,34 @@ async def puppeteer_screenshot(archive_id, url_id, date, url, pics_out_path, tim
     except:
         await browser.close()
 
+def selenium_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
+    
+    import time
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    import os
+
+    print("Loading Selenium")
+    options = webdriver.ChromeOptions()
+    options.headless = True
+    driver = webdriver.Chrome(options=options)
+    
+    try:
+       driver.get(url)
+       S = lambda X: driver.execute_script('return document.body.parentNode.scroll'+X)
+       driver.set_window_size(S('Width'),S('Height')) # May need manual adjustment 
+       output_file_name = pics_out_path+archive_id+"."+url_id+"."+date+".png"
+       print("Output file name: ", output_file_name)
+       driver.find_element_by_tag_name('body').screenshot(output_file_name)
+       print("Screenshot successful")
+       driver.quit()
+       return "Screenshot successful"
+
+    except:  # unknown error
+        logging.info("Screenshot unsuccessful")
+        print("Screenshot unsuccessful")
+        return "Screenshot unsuccessful"
+    
 
 def chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration):
     # not fully implemented
@@ -372,7 +401,7 @@ def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_du
     # not fully implemented
     box = (0, 0, 1024, 768)
     command = "xvfb-run --server-args=\"-screen 0, 1024x768x24\" " \
-              "/usr/bin/cutycapt --url='{0}' --out={1}{2}.{3}.{4}.png --delay=2000 --max-wait={5}" \
+              "/usr/bin/cutycapt --url='{0}' --out={1}{2}.{3}.{4}.jpg --delay=2000 --max-wait={5}" \
         .format(url, pics_out_path, archive_id, url_id, date, timeout_duration*1000)
     print(command)
     try:
@@ -384,6 +413,7 @@ def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_du
             print("Cropping image")
             filename = archive_id+"."+url_id+"."+date+".png"
             print(filename)
+            '''
             im =    Image.open(pics_out_path+filename)
             cropped_image = im.crop(box)
             cropped_image = cropped_image.convert('RGB')
@@ -391,7 +421,7 @@ def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_du
             cropped_image.save(pics_out_path+cropped_filename)
             rm_command = "rm "+pics_out_path+filename
             os.system(rm_command)
-
+            '''
             return "Screenshot successful"
         else:
             logging.info("Screenshot unsuccessful")
@@ -529,10 +559,10 @@ def parse_args():
         The CSV file with the current urls.
     csv_out_name : str
         The CSV file to write the index.
-    pics_out_path : str
+    pics_out_path : 
         Directory to output the screenshots.
     screenshot_method : int
-        Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt.
+        Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt, 3 for selenium.
     timeout_duration : str
         Duration before timeout when going to each website.
     read_range : list

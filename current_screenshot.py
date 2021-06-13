@@ -171,6 +171,8 @@ def take_screenshot(archive_id, url_id, url, pics_out_path, screenshot_method, t
         return site_status, site_message, chrome_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration)
     elif screenshot_method == 2:
         return site_status, site_message, cutycapt_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration)
+    elif screenshot_method == 3:
+        return site_status, site_message, selenium_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration)
     elif screenshot_method == 1:
         try:
             signal.alarm(timeout_duration * 2 + 60)  # timer for when asyncio stalls on a invalid state error
@@ -236,6 +238,39 @@ def chrome_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
         return "Screenshot unsuccessful"
 
 
+def selenium_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
+    
+    import time
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    import os
+
+    print("Loading Selenium")
+    options = webdriver.ChromeOptions()
+    options.headless = True
+    driver = webdriver.Chrome(options=options)
+    
+    try:
+       driver.get(url)
+       print("Loading Selenium 2")	
+       S = lambda X: driver.execute_script('return document.body.parentNode.scroll'+X)
+       print("Loading Selenium 3")
+       driver.set_window_size(S('Width'),S('Height')) # May need manual adjustment 
+       print("Loading Selenium 4")
+       output_file_name = pics_out_path+archive_id+"."+url_id+".png"
+       print("Loading Selenium 5")	
+       print("Output file name: ", output_file_name)
+       driver.find_element_by_tag_name('body').screenshot(output_file_name)
+       print("Screenshot successful")
+       driver.quit()
+       return "Screenshot successful"
+
+    except:  # unknown error
+        logging.info("Screenshot unsuccessful")
+        print("Screenshot unsuccessful")
+        return "Screenshot unsuccessful"
+    
+    
 def cutycapt_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
     # not fully implemented
     box = (0, 0, 1024, 768)
@@ -249,9 +284,11 @@ def cutycapt_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration
             print("Cropping image")
             filename = archive_id+"."+url_id+".jpg"
             print(filename)
+            '''
             im =    Image.open(pics_out_path+filename)
             cropped_image = im.crop(box)
             cropped_image.save(pics_out_path+filename)
+            '''
             return "Screenshot successful"
         else:
             logging.info("Screenshot unsuccessful")
@@ -478,7 +515,7 @@ def parse_args():
     parser.add_argument("--picsout", type=str, help="Directory to output the screenshots")
     parser.add_argument("--indexcsv", type=str, help="The CSV file to write the index")
     parser.add_argument("--method", type=int,
-                        help="Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt")
+                        help="Which method to take the screenshots, 0 for chrome, 1 for puppeteer, 2 for cutycapt, 3 for selenium")
     parser.add_argument("--timeout", type=str,
                         help="(optional) Specify duration before timeout for each site, in seconds, default 30 seconds")
     parser.add_argument("--range", type=str,
