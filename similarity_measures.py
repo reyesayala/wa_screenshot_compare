@@ -81,6 +81,8 @@ def calculate_ssim(current_image_name, archive_image_name):
         return ssim_noise
     except:
         print("Problems reading the file")
+        print(current_image_name)
+        print(archive_image_name)
         return None
         
 

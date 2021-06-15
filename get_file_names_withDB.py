@@ -2,7 +2,7 @@ import sqlite3
 import argparse
 import csv
 
-
+'''
 def open_with_db(csv_out_name, do_print):
     """Gets the url and file names using a sql query and writing it to CSV
 
@@ -43,7 +43,7 @@ def open_with_db(csv_out_name, do_print):
                 print("{0}|{1}|{2}|{3}".format(current_url, archive_url, current_filename, archive_filename))
 
     connection.close()
-
+'''
 
 def open_with_csv(curr_csv_name, arch_csv_name, csv_out_name, do_print):
     """Parses both index files line by line and writes the urls and file names to the output file.
