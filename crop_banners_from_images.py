@@ -21,34 +21,6 @@ def crop_images(input_dir, output_dir, new_dimensions):
 		
 	print("All images have been succesfully cropped\n")
 
-# for handling the command line switches
-def parse_args():
-	parser = argparse.ArgumentParser()
-	parser.add_argument("--input_dir", type=str, help="directory of current screenshots with banners that need to be removed")
-	parser.add_argument("--output_dir", type=str, help="directory where screenshots without the banners will be saved")
-	parser.add_argument('--new_dimensions', type=str, help="dimension you wish the new screenshot to be")
-
-	args = parser.parse_args()
-
-	# some error checking
-	if args.input_dir is None:
-		print("Must provide input directory for image files\n")
-		exit()
-	if args.output_dir is None:
-		print("Must provide output directory for image files\n")
-		exit()
-	if args.new_dimensions is None:
-		print("Must provide new dimensions for output files\n")
-		exit()
-
-	#read the new dimensions argument as a list
-	new_dimensions_list = args.new_dimensions.split(',')  # ['1','2','3','4']
-	#convert all elements of list to integers
-	new_dimensions_list2 = list(map(int, new_dimensions_list))
-
-
-	
-	return(args.input_dir, args.output_dir, new_dimensions_list2)
 
 #python prog.py --l1=1,2,3,4
 def main():

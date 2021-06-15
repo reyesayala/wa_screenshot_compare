@@ -54,43 +54,6 @@ def make_selection(input_csv, out_csv, num, total):
                 holder.append(row)
 
 
-def parse_args():
-    """Parses the arguments passed in from the command line.
-
-    Returns
-    -------
-    args.csv : str
-        Path of the input CSV file which contains the urls and file names.
-
-    args.out : str
-        Path of the output CSV file which can be written to.
-
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--csv", type=str, help="The CSV file with screenshot file names")
-    parser.add_argument("--out", type=str, help="The CSV file to write the newly selected file names")
-    parser.add_argument("--num", type=int, help="Specify to choose a random number of screenshot per ID")
-    parser.add_argument("--total", type=int, help="Specify total number of screenshots.")
-
-    args = parser.parse_args()
-
-    # some error checking
-    if args.csv is None:
-        print("Must provide input file")
-        exit()
-    if args.out is None:
-        print("Must provide output file")
-        exit()
-    if args.num is None:
-        print("Must provide number of random files")
-        exit()
-    if args.num < 1:
-        print("Invalid value for number of random files")
-        exit()
-
-    return args.csv, args.out, args.num, args.total
-
-
 def main():
     # input_csv, out_file, num, total = parse_args()
     import read_config_file

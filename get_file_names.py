@@ -57,8 +57,8 @@ def open_with_csv(curr_csv_name, arch_csv_name, csv_out_name, do_print):
                                 adate = aurl_split[:aurl_split.find('/')]
                                 if (adate.find("if_") != -1):
                                     adate = adate[:-3]
-                            current_filename = "{0}.{1}.jpg".format(carchive_id, curl_id)
-                            archive_filename = "{0}.{1}.{2}.jpg".format(aarchive_id, aurl_id, adate)
+                            current_filename = "{0}.{1}.png".format(carchive_id, curl_id)
+                            archive_filename = "{0}.{1}.{2}.png".format(aarchive_id, aurl_id, adate)
                             csv_writer.writerow([curl, aurl, current_filename, archive_filename])
 
                             if do_print:
@@ -68,58 +68,6 @@ def open_with_csv(curr_csv_name, arch_csv_name, csv_out_name, do_print):
 
                 except StopIteration:
                     pass
-
-def parse_args():
-    """Parses the command line arguments
-
-    Returns
-    -------
-    use_csv : bool
-        Whether or not the input is a CSV.
-    curr_csv_name : str
-        The CSV file with the current screenshot index.
-    arch_csv_name : str
-        The CSV file with the archive screenshots index.
-    csv_out_name : str
-        The CSV file to write the urls and file names.
-    do_print : bool
-        Whether or not to print the results to stdout.
-
-    """
-
-    parser = argparse.ArgumentParser()
-
-    # initializing every line switch
-    parser.add_argument("--currcsv", type=str, help="The CSV file with the current screenshots index")
-    parser.add_argument("--archcsv", type=str, help="The CSV file with the archive screenshots index")
-    parser.add_argument("--out", type=str, help="The CSV file to write the urls and file names")
-    parser.add_argument("--print", action='store_true',
-                        help="(optional) Include to print urls and file names to stdout, default doesn't print")
-
-    args = parser.parse_args()
-
-    # some parameters checking
-    if args.currcsv is None and args.archcsv is None:
-        print("Must provide input file\n")
-        exit()
-    if args.currcsv is None:
-        print("Must provide input CSV file with the current screenshot index.\n")
-        exit()
-    if args.archcsv is None:
-        print("Must provide input CSV file with the archive screenshots index.\n")
-        exit()
-    if args.out is None:
-        print("Must specify output file\n")
-        exit()
-    
-    curr_csv_name = args.currcsv
-    arch_csv_name = args.archcsv
-
-    csv_out_name = args.out
-    do_print = args.print
-
-    return curr_csv_name, arch_csv_name, do_print, csv_out_name
-
 
 def main():
     # curr_csv_name, arch_csv_name, do_print, csv_out_name = parse_args()

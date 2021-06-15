@@ -106,7 +106,10 @@ def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, csv_ou
 
                 if ssim_flag:
                     ssim_score = similarity_measures.calculate_ssim(current_image_name, archive_image_name)
-                    output.append("%.2f" % ssim_score)   # truncate to 2 decimal places
+                    if ssim_score is None:
+                       continue
+                    else: 
+                       output.append("%.2f" % ssim_score)   # truncate to 2 decimal places
                 if mse_flag:
                     mse_score = similarity_measures.calculate_mse(current_image_name, archive_image_name)
                     output.append("%.2f" % mse_score)
