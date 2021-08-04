@@ -43,7 +43,7 @@ def screenshot_csv(csv_in_name, csv_out_name, pics_out_path, screenshot_method, 
         Whether or not to run click_button() to attempt to remove cookies banners. False to remove.
 
     """
-
+    
     with open(csv_in_name, 'r') as csv_file_in:
         csv_reader = csv.reader(csv_file_in)
         with open(csv_out_name, 'w+') as csv_file_out:
@@ -510,7 +510,7 @@ def main():
     set_up_logging(config.archive_pics_dir)
     screenshot_csv(config.archive_urls_csv, config.archive_index_csv, config.archive_pics_dir, config.a_method, config.a_timeout, [config.a_range_min, config.a_range_max], config.a_chrome_args, [config.a_screen_height, config.a_screen_width], config.a_keep_cookies)
 
-    print("The current screenshots have been created in this directory: ", config.archive_pics_dir)
+    print("The archive screenshots have been created in this directory: ", config.archive_pics_dir)
 
 
 if __name__ == "__main__":
