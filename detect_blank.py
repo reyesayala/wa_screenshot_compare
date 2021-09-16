@@ -25,6 +25,8 @@ def	image_is_white(image_file):
 
 def	find_blank_images(image_dir, csv_out_name):	
 
+	not_img_count = 0;
+	blank_count = 0;
 	file_list = os.listdir(image_dir)
 	with open(csv_out_name, 'w') as csv_file_out:
 		csv_writer = csv.writer(csv_file_out,	delimiter=',', quoting=csv.QUOTE_ALL)
@@ -37,14 +39,19 @@ def	find_blank_images(image_dir, csv_out_name):
 			try:
 				im =	Image.open(image_dir+filename)
 				if(image_is_black(im)) or (image_is_white(im)):
+					blank_count += 1;
 					print("Image: ", image_dir+filename+" is blank")
 					output = [image_dir+filename]
 					csv_writer.writerow(output)
-			except IOError:
+			except IOError as e:
 # filename not an image	file
+				print(e);
+				not_img_count += 1;
 				print("File:	", filename, "is not an	image file")
-	
+
 	csv_file_out.close()
+	print("image is blank: ", blank_count);
+	print("not an image file: ", not_img_count);
 
 
 

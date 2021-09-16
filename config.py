@@ -102,6 +102,7 @@ def load_config():
     globals()['mse'] = config.getboolean(sect, 'mse')
     globals()['vector'] = config.getboolean(sect, 'vector')
     globals()['scores_file_csv'] = config.get(sect, 'scores_file_csv')
+    globals()['blank_file_csv'] = config.get(sect, 'blank_file_csv')
     globals()['similarity_print'] = config.getboolean(sect, 'similarity_print')
     globals()['print'] = config.getboolean(sect, 'print')
 

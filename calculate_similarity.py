@@ -1,6 +1,9 @@
 import argparse
 import csv
 import importlib
+from PIL import	Image
+from PIL import	ImageChops
+import os
 
 
 def read_input_file(csv_in_name, curr_img_dir, arch_img_dir):
@@ -61,8 +64,22 @@ def read_input_file(csv_in_name, curr_img_dir, arch_img_dir):
 
     return image_name_dict, url_name_dict
 
+def	image_is_black(image_file):
+	if	not	image_file.getbbox():
+		#print("Image	is completely black")
+		return(True)
+	else:
+		return(False)
+		
+def	image_is_white(image_file):
+	if	not	ImageChops.invert(image_file).getbbox():
+		#print("Image	is completely white")
+		return(True)
+	else:
+		return(False)
 
-def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, csv_out_name, do_print):
+
+def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, csv_out_name, balnk_csv_name, do_print):
     """Calculates the image similarity scores of the given images
 
     Parameters
@@ -87,8 +104,9 @@ def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, csv_ou
     """
     similarity_measures = importlib.import_module("similarity_measures")
 
-    with open(csv_out_name, 'w+') as csv_file_out:
+    with open(csv_out_name, 'w+') as csv_file_out, open(balnk_csv_name, 'w+') as blank_file_out:
         csv_writer = csv.writer(csv_file_out, delimiter=',', quoting=csv.QUOTE_ALL)
+        blank_csv_writer = csv.writer(blank_file_out, delimiter=',', quoting=csv.QUOTE_ALL)
 
         header = ["current_url", "archive_url", "current_file_name", "archive_file_name"]
         if ssim_flag:
@@ -99,35 +117,67 @@ def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, csv_ou
             header.append("vector_score")
         csv_writer.writerow(header)
 
+        bleank_header = ["blank_image_file_name"]
+        blank_csv_writer.writerow(bleank_header)
+
+
         for current_image_name, archive_image_list in image_dict.items():
             for archive_image_name in archive_image_list:
                 output = [url_name_dict[current_image_name], url_name_dict[archive_image_name],
                           current_image_name, archive_image_name]
 
-                if ssim_flag:
-                    ssim_score = similarity_measures.calculate_ssim(current_image_name, archive_image_name)
-                    if ssim_score is None:
-                       continue
-                    else: 
-                       output.append("%.2f" % ssim_score)   # truncate to 2 decimal places
-                if mse_flag:
-                    mse_score = similarity_measures.calculate_mse(current_image_name, archive_image_name)
-                    output.append("%.2f" % mse_score)
-                if vec_flag:
-                    vec_score = similarity_measures.calculate_vec(current_image_name, archive_image_name)
-                    output.append("%.2f" % vec_score)
+                is_valid = True;
 
-                csv_writer.writerow(output)
+                image_name_pair = [current_image_name, archive_image_name];
 
-                if do_print:
-                    print("{0}, {1}".format(output[2], output[3]), end='')
+                for image_name in image_name_pair :
+                    try:
+                        im =	Image.open(image_name)
+                        if(image_is_black(im)) or (image_is_white(im)):
+                            print("Image: ", image_name+" is blank")
+                            csv_output = [image_name];
+                            blank_csv_writer.writerow(csv_output);
+                            is_valid = False;
+                    except FileNotFoundError as e:
+                        is_valid = False;
+                        print("File not found", image_name);
+                    except IOError as e:
+                        
+                        # filename not an image	file
+                        print(e);
+                        print("File:	", image_name, "is not an	image file")
+                        is_valid = False;
+                    except:
+                        print("Unknown error")
+                        is_valid = False;
+
+
+
+                if is_valid:
                     if ssim_flag:
-                        print(", %.2f" % ssim_score, end='')
+                        ssim_score = similarity_measures.calculate_ssim(current_image_name, archive_image_name)
+                        if ssim_score is None:
+                            continue
+                        else: 
+                            output.append("%.2f" % ssim_score)   # truncate to 2 decimal places
                     if mse_flag:
-                        print(", %.2f" % mse_score, end='')
+                        mse_score = similarity_measures.calculate_mse(current_image_name, archive_image_name)
+                        output.append("%.2f" % mse_score)
                     if vec_flag:
-                        print(", %.2f" % vec_score, end='')
-                    print('\n', end='')
+                        vec_score = similarity_measures.calculate_vec(current_image_name, archive_image_name)
+                        output.append("%.2f" % vec_score)
+
+                    csv_writer.writerow(output)
+
+                    if do_print:
+                        print("{0}, {1}".format(output[2], output[3]), end='')
+                        if ssim_flag:
+                            print(", %.2f" % ssim_score, end='')
+                        if mse_flag:
+                            print(", %.2f" % mse_score, end='')
+                        if vec_flag:
+                            print(", %.2f" % vec_score, end='')
+                        print('\n', end='')
 
 
 def parse_args():
@@ -190,7 +240,7 @@ def main():
     print("Reading the input files ...")
     image_dict, url_name_dict = read_input_file(config.file_names_csv, config.current_pics_dir, config.archive_pics_dir)
 
-    find_scores(image_dict, url_name_dict, config.ssim, config.mse, config.vector, config.scores_file_csv, config.print)
+    find_scores(image_dict, url_name_dict, config.ssim, config.mse, config.vector, config.scores_file_csv, config.blank_file_csv, config.print)
 
 
 main()
