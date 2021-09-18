@@ -49,7 +49,7 @@ def create_with_csv(csv_out_name, csv_in_name, remove_banner):
                             for htmla in htmltd.findAll('a'):
                                 found_url = htmla.get('href')
                                 if(found_url.startswith("https://")):
-                                    continue
+                                    pass
                                 else:
                                     found_url="https:"+found_url
                                 date = found_url.split('/')[4]
