@@ -62,8 +62,8 @@ def create_with_csv(csv_out_name, csv_in_name, remove_banner):
                                 csv_writer.writerow([archive_id, url_id, date, final_url])
 
                                 found = True
-                if not found:
-                    csv_writer.writerow([archive_id, url_id, "", ""])
+                #if not found:
+                    #csv_writer.writerow([archive_id, url_id, "", ""])
 
                 page.close()
 
