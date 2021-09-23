@@ -222,7 +222,7 @@ def selenium_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration
     
     
 def cutycapt_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration):
-    command = "xvfb-run --server-args=\"-screen 0, 1024x768x24\" " \
+    command = "xvfb-run -e /dev/stdout --server-args=\"-screen 0, 1024x768x24\" " \
               "/usr/bin/cutycapt --url='{0}' --out={1}{2}.{3}.png --delay=2000 --max-wait={4}" \
         .format(url, pics_out_path, archive_id, url_id, timeout_duration*1000)
     print(command)
