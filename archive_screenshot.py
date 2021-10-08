@@ -305,9 +305,10 @@ def selenium_screenshot(pics_out_path, archive_id, url_id, url, timeout_duration
 
 def chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration):
     # not fully implemented
-    command = "timeout {5}s google-chrome --headless --hide-scrollbars --disable-gpu --noerrdialogs " \
+    # timeout set to 10 minutes
+    command = "google-chrome --headless --hide-scrollbars --disable-gpu --noerrdialogs --aggressive-cache-discard --aggressive-tab-discard --timeout=600000" \
               "--enable-fast-unload --screenshot={0}{1}.{2}.{3}.png --window-size=1024x768 '{4}'" \
-        .format(pics_out_path, archive_id, url_id, date, url, timeout_duration)
+        .format(pics_out_path, archive_id, url_id, date, url)
     try:
         if os.system(command) == 0:
             logging.info("Screenshot successful")
@@ -323,9 +324,9 @@ def chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_dura
 
 
 def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration):
-    command = "xvfb-run --server-args=\"-screen 0, 1024x768x24\" " \
-              "/usr/bin/cutycapt --url='{0}' --out={1}{2}.{3}.{4}.png --delay=2000 --max-wait={5}" \
-        .format(url, pics_out_path, archive_id, url_id, date, timeout_duration*1000)
+    command = "timeout 10m xvfb-run -e /dev/stdout --server-args=\"-screen 0, 1024x768x24\" " \
+              "/usr/bin/cutycapt --url='{0}' --out={1}{2}.{3}.{4}.png --delay=2000  --private-browsing=on --plugins=off" \
+        .format(url, pics_out_path, archive_id, url_id, date)
     print(command)
     try:
         time.sleep(1)  # cutycapt needs to rest
