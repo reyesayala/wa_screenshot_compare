@@ -79,7 +79,7 @@ def	image_is_white(image_file):
 		return(False)
 
 
-def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, csv_out_name, balnk_csv_name, do_print):
+def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, phash_flag, csv_out_name, balnk_csv_name, do_print):
     """Calculates the image similarity scores of the given images
 
     Parameters
@@ -115,6 +115,8 @@ def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, csv_ou
             header.append("mse_score")
         if vec_flag:
             header.append("vector_score")
+        if phash_flag:
+            header.append("phash_score")
         csv_writer.writerow(header)
 
         bleank_header = ["blank_image_file_name"]
@@ -166,6 +168,9 @@ def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, csv_ou
                     if vec_flag:
                         vec_score = similarity_measures.calculate_vec(current_image_name, archive_image_name)
                         output.append("%.2f" % vec_score)
+                    if phash_flag:
+                        phash_score = similarity_measures.calculate_phash(current_image_name, archive_image_name)
+                        output.append("%.2f" % phash_score)
 
                     csv_writer.writerow(output)
 
@@ -177,6 +182,8 @@ def find_scores(image_dict, url_name_dict, ssim_flag, mse_flag, vec_flag, csv_ou
                             print(", %.2f" % mse_score, end='')
                         if vec_flag:
                             print(", %.2f" % vec_score, end='')
+                        if phash_flag:
+                            print(", %.2f" % phash_score, end='')
                         print('\n', end='')
 
 
@@ -240,7 +247,7 @@ def main():
     print("Reading the input files ...")
     image_dict, url_name_dict = read_input_file(config.file_names_csv, config.current_pics_dir, config.archive_pics_dir)
 
-    find_scores(image_dict, url_name_dict, config.ssim, config.mse, config.vector, config.scores_file_csv, config.blank_file_csv, config.print)
+    find_scores(image_dict, url_name_dict, config.ssim, config.mse, config.vector, config.phash, config.scores_file_csv, config.blank_file_csv, config.print)
 
 
 main()

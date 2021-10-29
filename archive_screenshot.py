@@ -324,9 +324,9 @@ def chrome_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_dura
 
 
 def cutycapt_screenshot(pics_out_path, archive_id, url_id, date, url, timeout_duration):
-    command = "timeout 10m xvfb-run -e /dev/stdout --server-args=\"-screen 0, 1024x768x24\" " \
-              "/usr/bin/cutycapt --url='{0}' --out={1}{2}.{3}.{4}.png --delay=2000  --private-browsing=on --plugins=off" \
-        .format(url, pics_out_path, archive_id, url_id, date)
+    command = "timeout {6}s xvfb-run -e /dev/stdout --server-args=\"-screen 0, 1024x768x24\" " \
+              "/usr/bin/cutycapt --url='{0}' --out={1}{2}.{3}.{4}.png --delay=2000 --max-wait={5} --private-browsing=on --plugins=off" \
+        .format(url, pics_out_path, archive_id, url_id, date, timeout_duration*1000, timeout_duration+10)
     print(command)
     try:
         time.sleep(1)  # cutycapt needs to rest

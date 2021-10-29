@@ -33,6 +33,7 @@ from skimage.measure import compare_ssim as ssim
 from skimage import io
 
 from PIL import Image, ImageFile
+import imagehash
 
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -163,3 +164,31 @@ def calculate_vec(current_image_name, archive_image_name):
     vec_score = 100 - ((dif / 255.0 * 100) / ncomponents)    # convert to percentage match
 
     return vec_score
+
+
+def calculate_phash(current_image_name, archive_image_name):
+    """Calculates the phash score of the two given images
+
+    Parameters
+    ----------
+    current_image_name : str
+        The current website screenshot file path.
+    archive_image_name : str
+        The archive website screenshot file path.
+
+    Returns
+    -------
+    vec_score : float
+        The phash score.
+
+    References
+    ----------
+    .. [1] https://rosettacode.org/wiki/Percentage_difference_between_images#Python
+
+    """
+    current_image = Image.open(current_image_name)
+    archive_image = Image.open(archive_image_name)
+    cur_hash = imagehash.phash(current_image)
+    archive_hash = imagehash.phash(archive_image)
+    phash_score = cur_hash - archive_hash
+    return phash_score
