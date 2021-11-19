@@ -101,6 +101,7 @@ def load_config():
     globals()['ssim'] = config.getboolean(sect, 'ssim')
     globals()['mse'] = config.getboolean(sect, 'mse')
     globals()['vector'] = config.getboolean(sect, 'vector')
+    globals()['phash'] = config.getboolean(sect, 'phash')
     globals()['scores_file_csv'] = config.get(sect, 'scores_file_csv')
     globals()['blank_file_csv'] = config.get(sect, 'blank_file_csv')
     globals()['similarity_print'] = config.getboolean(sect, 'similarity_print')
