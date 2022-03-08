@@ -5,6 +5,7 @@ from nltk.tokenize import word_tokenize
 import argparse
 import csv
 import logging
+from requests_html import HTMLSession
 
 def get_cosine_similarity(archive_title,current_title):
 
@@ -74,6 +75,20 @@ def content_drift_check(csv_in, csv_out, threshold):
                     print("archive_url: ", archive_url);
                     current_title = (bs4.BeautifulSoup(urllib.request.urlopen(cur_url), "html.parser")).title.text
                     archive_title = (bs4.BeautifulSoup(urllib.request.urlopen(archive_url), "html.parser")).title.text
+
+                    # current_title_soup = (bs4.BeautifulSoup(urllib.request.urlopen(cur_url), "html.parser"))
+                    # current_title = current_title_soup.find("title").text
+                    # archive_title_soup = (bs4.BeautifulSoup(urllib.request.urlopen(archive_url), "html.parser"))
+                    # archive_title = archive_title_soup.find("title").text
+
+                    # session = HTMLSession()
+                    # current_response = session.get(cur_url);
+                    # current_soup = BeautifulSoup(current_response.content, 'html.parser');
+                    # current_title = current_soup.find("title").text
+                    # archive_response = session.get(archive_url)
+                    # archive_soup = BeautifulSoup(archive_response.content, 'html.parser');
+                    # archive_title = archive_soup.find("title").text
+
                 except Exception as e:
                     print("Error Message: Getting title error")
                     print(e)
@@ -82,7 +97,6 @@ def content_drift_check(csv_in, csv_out, threshold):
                     logging.info(e)
                     current_title = "_NAN_"
                     archive_title = "_NAN_"
-                    continue;
 
                 try:
                     print("getting similarity score")
@@ -105,7 +119,6 @@ def content_drift_check(csv_in, csv_out, threshold):
                     logging.info(e)
                     similarity = "_NAN_"
                     content_flag = "_NAN_"
-                    continue;
                 
                 csv_writer.writerow([cur_url, archive_url, current_title, archive_title, similarity, content_flag])
 
