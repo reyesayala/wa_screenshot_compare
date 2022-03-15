@@ -6,6 +6,8 @@ import argparse
 import csv
 import logging
 from requests_html import HTMLSession
+from selenium import webdriver
+from selenium.webdriver import FirefoxOptions
 
 def get_cosine_similarity(archive_title,current_title):
 
@@ -49,13 +51,16 @@ def get_cosine_similarity(archive_title,current_title):
 
 
 def content_drift_check(csv_in, csv_out, threshold):
-    
+    opts = FirefoxOptions()
+    opts.add_argument("--headless")
+    driver = webdriver.Firefox(firefox_options=opts)
+
     with open(csv_in, 'r') as csv_file_in:
         csv_reader = csv.reader(csv_file_in)
         with open(csv_out, 'w+') as csv_file_out:
             csv_writer = csv.writer(csv_file_out, delimiter=',', quoting=csv.QUOTE_ALL)
             csv_writer.writerow(
-                ["current_url", "archive_url", "current_title", "archive_title", "similarity_score", "content_drift"])
+                ["current_url", "archive_url", "current_title", "archive_title", "similarity_score", "content_drift", "Note"])
 
             line_count = 0
             next(csv_reader)  # skip header
@@ -75,6 +80,7 @@ def content_drift_check(csv_in, csv_out, threshold):
                     print("archive_url: ", archive_url);
                     current_title = (bs4.BeautifulSoup(urllib.request.urlopen(cur_url), "html.parser")).title.text
                     archive_title = (bs4.BeautifulSoup(urllib.request.urlopen(archive_url), "html.parser")).title.text
+                    cur_note = ""
 
                     # current_title_soup = (bs4.BeautifulSoup(urllib.request.urlopen(cur_url), "html.parser"))
                     # current_title = current_title_soup.find("title").text
@@ -88,15 +94,28 @@ def content_drift_check(csv_in, csv_out, threshold):
                     # archive_response = session.get(archive_url)
                     # archive_soup = BeautifulSoup(archive_response.content, 'html.parser');
                     # archive_title = archive_soup.find("title").text
-
                 except Exception as e:
-                    print("Error Message: Getting title error")
+                    print("html Error Message: Getting title error")
                     print(e)
-                    logging.info("Error Message: Getting title error")
-                    logging.info("current url: #{0}\n; archive url{1}".format(cur_url, archive_url))
+                    logging.info("html Error Message: Getting title error")
+                    logging.info("html - current url: #{0}\n; archive url{1};".format(cur_url, archive_url))
                     logging.info(e)
-                    current_title = "_NAN_"
-                    archive_title = "_NAN_"
+                    try:
+                        driver.get(cur_url)
+                        current_title = driver.title
+                        driver.close()
+                        driver.get(archive_url)
+                        archive_title = driver.title
+                        driver.close()
+                    except Exception as e:
+                        print("selenium Error Message: Getting title error")
+                        print(e)
+                        logging.info("selenium Error Message: Getting title error")
+                        logging.info("selenium - current url: #{0}\n; archive url{1};".format(cur_url, archive_url))
+                        logging.info(e)
+                        current_title = "_NAN_"
+                        archive_title = "_NAN_"
+                        cur_note = cur_note + "Error Retriving Title"
 
                 try:
                     print("getting similarity score")
@@ -119,8 +138,10 @@ def content_drift_check(csv_in, csv_out, threshold):
                     logging.info(e)
                     similarity = "_NAN_"
                     content_flag = "_NAN_"
+                    cur_note = cur_note + "Error Calculating Similarity"
                 
-                csv_writer.writerow([cur_url, archive_url, current_title, archive_title, similarity, content_flag])
+                csv_writer.writerow([cur_url, archive_url, current_title, archive_title, similarity, content_flag, cur_note])
+    driver.quit()
 
 def set_up_logging(log_out):
     """Setting up logging format.
@@ -173,7 +194,7 @@ def	parse_args():
 	if	args.log_out is	None:
 		args.log_out = args.csv_out[:-4] + "_log.txt"
 	if	args.threshold is None:
-		args.threshold = 0.9
+		args.threshold = 0.6
 
 	return	args.csv_in, args.csv_out, args.log_out, args.threshold
 
