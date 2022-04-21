@@ -8,8 +8,11 @@ import logging
 from requests_html import HTMLSession
 from selenium import webdriver
 from selenium.webdriver import FirefoxOptions
+<<<<<<< HEAD
 from selenium.webdriver.support.ui import WebDriverWait
 import time
+=======
+>>>>>>> 8dda4bfe4a55427c1c299998bcefda3cf19945f8
 
 def get_cosine_similarity(archive_title,current_title):
 
@@ -104,6 +107,7 @@ def content_drift_check(csv_in, csv_out, threshold):
                     logging.info(e)
                     try:
                         driver.get(cur_url)
+<<<<<<< HEAD
                         # driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
                         # driver.implicitly_wait(10, TimeUnit.SECONDS)
                         # WebDriverWait(driver, 10)
@@ -116,6 +120,13 @@ def content_drift_check(csv_in, csv_out, threshold):
                         # driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
                         archive_title = driver.title
                         # driver.close()
+=======
+                        current_title = driver.title
+                        driver.close()
+                        driver.get(archive_url)
+                        archive_title = driver.title
+                        driver.close()
+>>>>>>> 8dda4bfe4a55427c1c299998bcefda3cf19945f8
                     except Exception as e:
                         print("selenium Error Message: Getting title error")
                         print(e)
@@ -124,7 +135,11 @@ def content_drift_check(csv_in, csv_out, threshold):
                         logging.info(e)
                         current_title = "_NAN_"
                         archive_title = "_NAN_"
+<<<<<<< HEAD
                         cur_note = "Error Retriving Title"
+=======
+                        cur_note = cur_note + "Error Retriving Title"
+>>>>>>> 8dda4bfe4a55427c1c299998bcefda3cf19945f8
 
                 try:
                     print("getting similarity score")
@@ -147,10 +162,16 @@ def content_drift_check(csv_in, csv_out, threshold):
                     logging.info(e)
                     similarity = "_NAN_"
                     content_flag = "_NAN_"
+<<<<<<< HEAD
                     cur_note = "Error Calculating Similarity"
                 
                 csv_writer.writerow([cur_url, archive_url, current_title, archive_title, similarity, content_flag, cur_note])
                 
+=======
+                    cur_note = cur_note + "Error Calculating Similarity"
+                
+                csv_writer.writerow([cur_url, archive_url, current_title, archive_title, similarity, content_flag, cur_note])
+>>>>>>> 8dda4bfe4a55427c1c299998bcefda3cf19945f8
     driver.quit()
 
 def set_up_logging(log_out):
