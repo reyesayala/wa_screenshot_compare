@@ -8,6 +8,8 @@ import logging
 from requests_html import HTMLSession
 from selenium import webdriver
 from selenium.webdriver import FirefoxOptions
+from selenium.webdriver.support.ui import WebDriverWait
+import time
 
 def get_cosine_similarity(archive_title,current_title):
 
@@ -102,11 +104,20 @@ def content_drift_check(csv_in, csv_out, threshold):
                     logging.info(e)
                     try:
                         driver.get(cur_url)
+                        # driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+                        # driver.implicitly_wait(10, TimeUnit.SECONDS)
+                        # WebDriverWait(driver, 10)
+                        time.sleep(5);
+
                         current_title = driver.title
-                        driver.close()
+                        # driver.close()
                         driver.get(archive_url)
+                        # time.sleep(10);
+                        # driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
                         archive_title = driver.title
-                        driver.close()
+                        # driver.close()
+                        
+                        
                     except Exception as e:
                         print("selenium Error Message: Getting title error")
                         print(e)
@@ -115,7 +126,7 @@ def content_drift_check(csv_in, csv_out, threshold):
                         logging.info(e)
                         current_title = "_NAN_"
                         archive_title = "_NAN_"
-                        cur_note = cur_note + "Error Retriving Title"
+                        cur_note = cur_note + "Error Retriving Title. "
 
                 try:
                     print("getting similarity score")
