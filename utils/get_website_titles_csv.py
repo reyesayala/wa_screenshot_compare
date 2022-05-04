@@ -52,6 +52,27 @@ def get_cosine_similarity(archive_title,current_title):
     return(cosine)
 
 
+def similarity_calculation(archive_title, current_title, threshold, cur_note):
+    try:
+        similarity = get_cosine_similarity(archive_title, current_title)
+        if(similarity > threshold):
+            content_flag = "On-topic"
+        else:
+            content_flag = "Off-topic"
+        print("score: ", similarity)
+        print("content_drift: ", content_flag)
+    except Exception as e:
+        print("Error Message: Similarity error")
+        print(e)
+        logging.info("Error Message: Getting Similarity error")
+        logging.info("current url: #{0}\n; archive url{1}".format(cur_url, archive_url))
+        logging.info(e)
+        similarity = "_NAN_"
+        content_flag = "_NAN_"
+        cur_note = "Error Calculating Similarity"
+    return similarity, content_flag, cur_note
+
+
 def content_drift_check(csv_in, csv_out, threshold):
     opts = FirefoxOptions()
     opts.add_argument("--headless")
@@ -116,8 +137,6 @@ def content_drift_check(csv_in, csv_out, threshold):
                         # driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
                         archive_title = driver.title
                         # driver.close()
-                        
-                        
                     except Exception as e:
                         print("selenium Error Message: Getting title error")
                         print(e)
@@ -126,32 +145,17 @@ def content_drift_check(csv_in, csv_out, threshold):
                         logging.info(e)
                         current_title = "_NAN_"
                         archive_title = "_NAN_"
-                        cur_note = cur_note + "Error Retriving Title. "
+                        cur_note = "Error Retriving Title"
 
-                try:
-                    print("getting similarity score")
-                    if (current_title == "_NAN_" or archive_title == "_NAN_"):
-                        similarity = "_NAN_"
-                        content_flag = "_NAN_"
-                    else:
-                        similarity = get_cosine_similarity(archive_title, current_title)
-                        if(similarity > threshold):
-                            content_flag = "On-topic"
-                        else:
-                            content_flag = "Off-topic"
-                    print("score: ", similarity)
-                    print("content_drift: ", content_flag)
-                except Exception as e:
-                    print("Error Message: Similarity error")
-                    print(e)
-                    logging.info("Error Message: Getting Similarity error")
-                    logging.info("current url: #{0}\n; archive url{1}".format(cur_url, archive_url))
-                    logging.info(e)
+                print("getting similarity score")
+                if (current_title == "_NAN_" or archive_title == "_NAN_"):
                     similarity = "_NAN_"
                     content_flag = "_NAN_"
-                    cur_note = cur_note + "Error Calculating Similarity"
+                else:
+                    similarity, content_flag, cur_note = similarity_calculation(archive_title, current_title, threshold, cur_note)
                 
                 csv_writer.writerow([cur_url, archive_url, current_title, archive_title, similarity, content_flag, cur_note])
+                
     driver.quit()
 
 def set_up_logging(log_out):
