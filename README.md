@@ -2,7 +2,7 @@
 Utilities for creating screenshots of archived websites and their live counterparts and compares the two screenshots.
 
 ## Getting Started
-Some packages such as pyppeteer run best on python 3.6. The necessary packages are listed in environment.yml.
+Some packages such as pyppeteer run best on python 3.10. The necessary packages are listed in environment.yml.
 
 Instructions on how to install Anaconda for python can be found [here](https://docs.anaconda.com/anaconda/install/linux/).
 
@@ -12,7 +12,7 @@ conda env create -f environment.yml
 ```
 Activating and deactivating the anaconda environment.
 ```
-conda activate python3_6
+conda activate python3_10
 conda deactivate
 ```
 For Selenium to work, users have to install ChromeDriver on the server and add it to the working PATH. 
