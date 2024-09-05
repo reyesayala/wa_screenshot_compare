@@ -104,7 +104,7 @@ Arguments:
 
 ### calculate_similarity.py
 This program gets all the screenshots and calls functions in similarity_measures.py to calculate the image similarity socres.
-> The output CSV will have five to seven columns, current URl, archive URL, current screenshot file name, archive screenshot file name, structural similarty score, mean squared error, vector comparison score.
+> The output CSV will have five to 10 columns, current URl, archive URL, current screenshot file name, archive screenshot file name, structural similarty score, mean squared error, percent difference score, hausdorff distance, psnr score, and normalized mean square error score
 
 command syntax:
 ```
