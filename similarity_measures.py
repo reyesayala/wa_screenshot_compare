@@ -29,8 +29,13 @@ import numpy as np
 import cv2
 
 from skimage import img_as_float
-from skimage.measure import compare_ssim as ssim
+#from skimage.measure import compare_ssim as ssim
+from skimage.metrics import structural_similarity as ssim
 from skimage import io
+from skimage.metrics import hausdorff_distance
+from skimage.metrics import normalized_root_mse
+from skimage.metrics import peak_signal_noise_ratio
+from skimage.metrics import mean_squared_error
 
 from PIL import Image, ImageFile
 import imagehash
@@ -49,7 +54,7 @@ def cropping_images(image_filename_a, image_filename_b):
     return image_filename_a_cropped, image_filename_b_cropped
 
 
-def calculate_ssim(current_image_name, archive_image_name):
+def calculate_ssim(current_image_name, archive_image_name, current_image, archive_image):
     """Calculates the structural similarity score of the two given images
 
     Parameters
@@ -70,24 +75,102 @@ def calculate_ssim(current_image_name, archive_image_name):
             sphx-glr-auto-examples-transform-plot-ssim-py
 
     """
+    #checks if images are same size (shape for ndarrays)
+    if(current_image.shape == archive_image.shape):
+        #current_image_float = img_as_float(current_image)
+        #archive_image_float = img_as_float(archive_image)
+        #datarange = archive_image_float.max() - archive_image_float.min()
+        ssim_score = ssim(current_image, archive_image, channel_axis = -1)
     
-    try:
-        current_image = io.imread(current_image_name)
-        archive_image = io.imread(archive_image_name)
+    else: 
+    
         (current_image_cropped, archive_image_cropped) = cropping_images(current_image, archive_image)
-        current_image_float = img_as_float(current_image_cropped)
-        archive_image_float = img_as_float(archive_image_cropped)
-        datarange = archive_image_float.max() - archive_image_float.min()
-        ssim_noise = ssim(current_image_float, archive_image_float, multichannel=True, data_range=datarange)
-        return ssim_noise
-    except:
-        print("Problems reading the file")
-        print(current_image_name)
-        print(archive_image_name)
-        return None
-        
+        #current_image_float = img_as_float(current_image_cropped)
+        #archive_image_float = img_as_float(archive_image_cropped)
+        #datarange = archive_image_float.max() - archive_image_float.min()
+        #print("Current_image size: ", current_image_cropped.size, "Shape: ", current_image.shape, "Data type: ", current_image.dtype)
+        ssim_score = ssim(current_image_cropped, archive_image_cropped, channel_axis = -1)
+    
+    return ssim_score
 
-def calculate_mse(current_image_name, archive_image_name):
+def calculate_psnr(current_image, archive_image):
+    """Calculates the peak signal to noise ratio (PSNR) of the two given images
+
+    Parameters
+    ----------
+    current_image_name : str
+        The current website screenshot file path.
+    archive_image_name : str
+        The archive website screenshot file path.
+    current_image: ndarray
+        A matrix representing the image
+    archive_image: ndarray
+        A matrix representing the image
+
+    Returns
+    -------
+    nrootmse : float
+        The normalized root mean squared error value.
+
+    References
+    ----------
+    .. [1]  https://scikit-image.org/docs/stable/api/skimage.metrics.html#skimage.metrics.normalized_root_mse
+    
+       [2]  https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=8d8fd7f146ff6020b80c8758a413c40d9854b0d6
+       
+       [3]  https://www.scirp.org/journal/paperinformation?paperid=90911
+
+    """
+    if(current_image.shape == archive_image.shape):
+        psnr = peak_signal_noise_ratio(current_image, archive_image)
+    else:
+        (current_image_cropped, archive_image_cropped) = cropping_images(current_image, archive_image)
+        psnr = peak_signal_noise_ratio(current_image_cropped, archive_image_cropped)
+
+
+    return psnr
+
+def calculate_nrmse(current_image, archive_image):
+
+    """Calculates the normalized root of the mean square error of the two given images
+
+    Parameters
+    ----------
+    current_image_name : str
+        The current website screenshot file path.
+    archive_image_name : str
+        The archive website screenshot file path.
+    current_image: ndarray
+        A matrix representing the image
+    archive_image: ndarray
+        A matrix representing the image
+
+    Returns
+    -------
+    nrootmse : float
+        The normalized root mean squared error value.
+
+    References
+    ----------
+    .. [1]  https://scikit-image.org/docs/stable/api/skimage.metrics.html#skimage.metrics.normalized_root_mse
+    
+       [2]  https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=8d8fd7f146ff6020b80c8758a413c40d9854b0d6
+       
+       [3]  https://www.scirp.org/journal/paperinformation?paperid=90911
+
+    """
+    
+    if(current_image.shape == archive_image.shape):
+        nrootmse = normalized_root_mse(current_image, archive_image)
+    else:
+        (current_image_cropped, archive_image_cropped) = cropping_images(current_image, archive_image)
+        nrootmse = normalized_root_mse(current_image_cropped, archive_image_cropped)
+
+
+    #print("NRMSE : ", nrootmse)
+    return nrootmse
+
+def calculate_mse(current_image_name, archive_image_name, current_image, archive_image):
     """Calculates the mean square error of the two given images
 
     Parameters
@@ -108,22 +191,23 @@ def calculate_mse(current_image_name, archive_image_name):
 
     """
 
-    current_image = io.imread(current_image_name)
-    archive_image = io.imread(archive_image_name)
-    (current_image_cropped, archive_image_cropped) = cropping_images(current_image, archive_image)
+
 
     # current_image_float = img_as_float(current_image)
     # archive_image_float = img_as_float(archive_image)
     # mse_noise = np.linalg.norm(current_image_float - archive_image_float)
+    
+    if(current_image.shape == archive_image.shape):
+        mse = mean_squared_error(current_image, archive_image)
+    else: 
+        (current_image_cropped, archive_image_cropped) = cropping_images(current_image, archive_image)
+        mse = mean_squared_error(current_image_cropped, archive_image_cropped)
+    
+    return mse
 
-    mse_noise = np.sum((current_image_cropped.astype("float") - archive_image_cropped.astype("float")) ** 2)
-    mse_noise /= float(current_image_cropped.shape[0] * current_image_cropped.shape[1])
 
-    return mse_noise
-
-
-def calculate_vec(current_image_name, archive_image_name):
-    """Calculates the vector difference score of the two given images
+def calculate_percent(current_image_name, archive_image_name, current_image, archive_image):
+    """Calculates the percentage similarity score of the two given images
 
     Parameters
     ----------
@@ -134,16 +218,15 @@ def calculate_vec(current_image_name, archive_image_name):
 
     Returns
     -------
-    vec_score : float
-        The vector difference score.
+    percent_score : float
+        The percentage similarity score.
 
     References
     ----------
     .. [1] https://rosettacode.org/wiki/Percentage_difference_between_images#Python
 
     """
-    current_image = io.imread(current_image_name)
-    archive_image = io.imread(archive_image_name)
+
     (current_image_cropped, archive_image_cropped) = cropping_images(current_image, archive_image)
     current_image = cv2.cvtColor(current_image_cropped, cv2.COLOR_BGR2RGB)
     current_image = Image.fromarray(current_image)
@@ -161,9 +244,12 @@ def calculate_vec(current_image_name, archive_image_name):
 
     ncomponents = current_image.size[0] * current_image.size[1] * 3
 
-    vec_score = 100 - ((dif / 255.0 * 100) / ncomponents)    # convert to percentage match
+    percent_score = 100 - ((dif / 255.0 * 100) / ncomponents)    # convert to percentage match
+    
+    #print("Percentage similarity: ", percent_score)
 
-    return vec_score
+    return percent_score
+
 
 
 def calculate_phash(current_image_name, archive_image_name):
@@ -178,7 +264,7 @@ def calculate_phash(current_image_name, archive_image_name):
 
     Returns
     -------
-    vec_score : float
+    phash_score : float
         The phash score.
 
     References
@@ -192,3 +278,15 @@ def calculate_phash(current_image_name, archive_image_name):
     archive_hash = imagehash.phash(archive_image)
     phash_score = cur_hash - archive_hash
     return phash_score
+    
+def calculate_hausdorff(current_image_name, archive_image_name, current_image, archive_image):
+    """Calculates the Hausdorff distance of the two given images
+    
+    References
+    ----------
+    ..[1] https://scikit-image.org/docs/stable/api/skimage.metrics.html#skimage.metrics.hausdorff_distance
+    
+    """
+    hausdorff = hausdorff_distance(current_image, archive_image)
+    return hausdorff
+    
