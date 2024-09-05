@@ -194,7 +194,11 @@ The following settings/arguments can be altered:
 * scores_file_csv - The CSV file to write the results of the comparisons.
 * ssim - (optional) Include to calculate structural similarity.
 * mse - (optional) Include to calculate mean square error.
-* vector - (optional) Include to calculate vector comparison score.
+* percent - (optional) Include to calculate percentage difference score.
+* hausdorff = (optional) Include to calculate hausdorff distance.
+* psnr = (optional) Include to calculate peak signal-to-noise ratio score.
+* nrmse = (optional) Include to calculate normalized mean square error.
+
 * similarity_print - (optional) Include to print results to stdout.
 
 **crop_banners_from_images:**
